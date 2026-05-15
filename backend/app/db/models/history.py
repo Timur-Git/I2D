@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime
 from typing import Optional
+from sqlalchemy import func, text
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, ForeignKey, Index, Text
@@ -21,10 +21,10 @@ class GenerationHistory(Base):
     )
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True,
-        comment="ID пользователя, чья это история", comment="ID владельца записи"
+        comment="ID пользователя, чья это история"
     )
     image_url = Column(
-        String(1000), nullable=False, comment="URL сгенерированного изображения", comment="URL сгенерированного фото"
+        String(1000), nullable=False, comment="URL сгенерированного изображения"
     )
     title = Column(String(200), nullable=False, comment="Сгенерированный заголовок")
     description = Column(Text, nullable=False, comment="Сгенерированное описание")
@@ -32,11 +32,11 @@ class GenerationHistory(Base):
     
     # Timestamps (created_at и modified_at)
     created_at = Column(
-        DateTime(timezone=True), server_default=DateTime.now().astimezone(), nullable=False,
+        DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False,
         comment="Дата создания записи"
     )
     modified_at = Column(
-        DateTime(timezone=True), onupdate=DateTime.now().astimezone(), nullable=False,
+        DateTime(timezone=True), onupdate=func.now(), nullable=False,
         comment="Дата последнего редактирования"
     )
     
@@ -44,11 +44,6 @@ class GenerationHistory(Base):
         Index("ix_gen_history_user_id", "user_id"),
         Index("ix_gen_history_created_at", "created_at"),
         Index("ix_gen_history_modified_at", "modified_at"),
-        Index(
-            "ix_gen_history_search", 
-            "title" where title.is_not(None) + " " + description where description.is_not(None),
-            postgresql_using="gin"
-        ),
     )
     
     def __repr__(self):

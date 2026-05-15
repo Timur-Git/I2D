@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Annotated, Optional
 
-import jwt
+from jose import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.config import settings
-from app.core.exceptions import TokenExpiredError
+from app.core.base_exceptions import TokenExpiredError
 
 
 security = HTTPBearer(auto_error=False)

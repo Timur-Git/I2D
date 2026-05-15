@@ -1,6 +1,6 @@
 import uuid
-from datetime import datetime
 from typing import Optional
+from sqlalchemy import func, text
 
 from sqlalchemy import (
     Column, Integer, String, DateTime, ForeignKey, Index, Text
@@ -21,24 +21,24 @@ class FileUpload(Base):
     )
     user_id = Column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True,
-        comment="ID пользователя, который загрузил файл", comment="ID владельца файла"
+        comment="ID пользователя, который загрузил файл"
     )
     original_filename = Column(
         String(255), nullable=False, comment="Оригинальное имя файла"
     )
     file_url = Column(
-        String(1000), nullable=False, comment="URL файла в объектном хранилище", comment="URL загруженного файла"
+        String(1000), nullable=False, comment="URL файла в объектном хранилище"
     )
     file_size = Column(Integer, nullable=False, comment="Размер файла в байтах")
     file_type = Column(
-        String(50), nullable=False, comment="Тип файла (jpg/png/webp)", comment="Формат изображения"
+        String(50), nullable=False, comment="Тип файла (jpg/png/webp)"
     )
     mime_type = Column(
-        String(100), nullable=False, comment="MIME-тип файла", comment="MIME тип"
+        String(100), nullable=False, comment="MIME-тип файла"
     )
     uploaded_at = Column(
-        DateTime(timezone=True), server_default=DateTime.now().astimezone(), nullable=False,
-        comment="Дата загрузки", comment="Дата создания записи"
+        DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False,
+        comment="Дата загрузки"
     )
     
     __table_args__ = (

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Optional
+from sqlalchemy import func, text
 
 from sqlalchemy import (
     Column, Integer, String, Boolean, DateTime, ForeignKey, Index, Text
@@ -21,46 +22,41 @@ class User(Base):
     )
     email = Column(
         String(255), unique=True, nullable=False, index=True,
-        comment="Email адрес пользователя", comment="Email адрес пользователя"
+        comment="Email адрес пользователя"
     )
     account_name = Column(
         String(50), unique=True, nullable=False, index=True,
-        comment="Имя аккаунта/никнейм", comment="Имя аккаунта пользователя"
+        comment="Имя аккаунта/никнейм"
     )
     hashed_password = Column(
         String(255), nullable=False,
-        comment="Хешированный пароль (bcrypt)", comment="Хешированный пароль пользователя"
+        comment="Хешированный пароль (bcrypt)"
     )
     profile_photo_url = Column(
         String(1000), nullable=True,
-        comment="URL аватара/профильного фото", comment="URL профиля фото пользователя"
+        comment="URL аватара/профильного фото"
     )
     is_active = Column(
         Boolean, default=True, nullable=False,
-        comment="Статус активности аккаунта", comment="Активен ли аккаунт"
+        comment="Статус активности аккаунта"
     )
     created_at = Column(
-        DateTime(timezone=True), server_default=DateTime.now().astimezone(), nullable=False,
-        comment="Дата регистрации", comment="Дата создания записи"
+        DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False,
+        comment="Дата регистрации"
     )
     updated_at = Column(
-        DateTime(timezone=True), onupdate=DateTime.now().astimezone(), nullable=False,
-        comment="Дата последнего обновления", comment="Дата последнего обновления записи"
+        DateTime(timezone=True), onupdate=func.now(), nullable=False,
+        comment="Дата последнего обновления"
     )
     deleted_at = Column(
         DateTime(timezone=True), nullable=True,
-        comment="Soft delete timestamp", comment="Временная метка мягкого удаления"
+        comment="Soft delete timestamp"
     )
     
     __table_args__ = (
         Index("ix_users_email", "email"),
         Index("ix_users_account_name", "account_name"),
         Index("ix_users_created_at", "created_at"),
-        Index(
-            "ix_users_soft_delete", 
-            "deleted_at" where deleted_at.is_not_null(), 
-            postgresql_include=["id"]
-        ),
     )
     
     def __repr__(self):
