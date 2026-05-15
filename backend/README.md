@@ -1,69 +1,106 @@
-# I2D Backend - FastAPI Skeleton
+# I2D Backend — Image to Description Service
 
-Минимальный каркас веб-приложения на FastAPI со health check endpoint.
+Backend API для сервиса генерации описаний товаров из фотографий.
 
-## Структура проекта
+## 🚀 Quick Start
 
-```
-I2D_backend/
-├── app/
-│   ├── main.py              # Точка входа (app factory)
-│   ├── config.py            # Настройки приложения (Pydantic Settings)
-│   └── api/
-│       └── v1/
-│           ├── router.py    # API v1 aggregator (с /v1 префиксом)
-│           └── health.py    # Health check endpoint
-├── tests/                   # Тесты
-├── requirements.txt         # Python зависимости
-└── .env                     # Конфигурация окружения
-```
-
-## Установка зависимостей
+### 1. Установка зависимостей
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Запуск сервера (Windows PowerShell)
-
-### 1. Активация виртуального окружения
-
-Откройте PowerShell и выполните:
-
-```powershell
-cd "C:\Users\Unknown\Documents\open_code_projects\I2D_backend"
-.\venv\Scripts\Activate.ps1
-python -m venv venv  # Если venv ещё не создан
-```
-
-### 2. Установка зависимостей
-
-```powershell
-pip install -r requirements.txt
-```
-
-### 3. Запуск сервера
-
-```powershell
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Выход из виртуального окружения
-
-```powershell
-deactivate
-```
-
-## Тестовый запрос
+### 2. Настройка окружения
 
 ```bash
-curl http://localhost:8000/v1/health
+cp .env.example .env
+# Редактируйте .env под ваши настройки PostgreSQL и MinIO
 ```
 
-**Ответ:** `{"status":"ok","timestamp":"2026-05-04T21:00:00.000000"}`
-
-## Тесты
+### 3. Запуск приложения
 
 ```bash
-python -m pytest tests/
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
+
+Ваш API будет доступен по адресу: `http://127.0.0.1:8000`
+
+### 4. Docker Compose (опционально)
+
+Если вам нужны контейнеры PostgreSQL и MinIO:
+
+```bash
+docker-compose up -d
+```
+
+---
+
+## 📦 Технологии
+
+- **FastAPI** — асинхронный веб-фреймворк
+- **SQLAlchemy 2.0** — ORM с asyncpg драйвером
+- **python-jose + bcrypt** — JWT токены и пароли
+- **boto3 + MinIO** — объектное хранилище
+- **httpx** — асинхронный HTTP клиент для AI
+
+---
+
+## 📁 Структура проекта
+
+```
+app/
+├── core/           # Ядро (security, database)
+├── db/             # ORM модели и репозитории
+├── storage/        # MinIO client + upload service
+├── schemas/        # Pydantic in/out models
+├── api/v1/         # API routes
+│   ├── auth/       # Регистрация, вход
+│   ├── users/      # Управление профилем
+│   ├── uploads/    # Загрузка фото
+│   ├── generate/   # AI генерация
+│   └── history/    # История результатов
+```
+
+---
+
+## 📖 Документация
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+---
+
+## 🔐 Безопасность
+
+- JWT токены с 60 минутным expiration
+- Пароли хешируются с bcrypt
+- Soft delete для пользователей и истории
+- CORS политика через конфигурацию
+
+---
+
+## 🧪 Тестирование
+
+```bash
+pytest tests/ -v --cov=app
+```
+
+---
+
+## 📝 Чеклист разработки
+
+**Что уже реализовано (Этап 7):**
+- ✅ ORM модели данных
+- ✅ Асинхронная работа с БД
+- ✅ JWT аутентификация
+- ✅ MinIO client + upload service
+- ✅ Repository pattern для User
+- ✅ Soft delete логика
+
+**Что осталось:**
+- ⏳ Auth routes (register, login, forgot-password)
+- ⏳ User CRUD endpoints
+- ⏳ Upload/Download фото API
+- ⏳ AI генерация + LLM интеграция
+- ⏳ History CRUD с пагинацией
+- ⏳ Тесты
