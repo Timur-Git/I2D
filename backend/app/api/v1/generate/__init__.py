@@ -1,3 +1,3 @@
-from app.api.v1.generate import router as generate_router, schemas as generate_schemas
+from app.api.v1.generate.router import router as generate_router
 
-__all__ = ["generate_router", "generate_schemas"]
+__all__ = ["generate_router"]

@@ -1,3 +1,3 @@
-from app.api.v1.users import router as users_router, schemas as users_schemas
+from app.api.v1.users.router import router as users_router
 
-__all__ = ["users_router", "users_schemas"]
+__all__ = ["users_router"]

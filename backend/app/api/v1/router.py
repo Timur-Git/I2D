@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 from app.api.v1 import health
-from app.api.v1.auth import router as auth_router
-from app.api.v1.users import router as users_router
-from app.api.v1.uploads import router as uploads_router
-from app.api.v1.generate import router as generate_router
-from app.api.v1.history import router as history_router
 
-# Основной роутер v1 API
+from app.api.v1.auth.router import router as auth_router
+from app.api.v1.users.router import router as users_router
+from app.api.v1.uploads.router import router as uploads_router
+from app.api.v1.generate.router import router as generate_router
+from app.api.v1.history.router import router as history_router
+
 router = APIRouter(prefix="/v1")
 
 
@@ -15,7 +15,7 @@ def read_root():
     return health.get_health()
 
 
-# Включение под-роутеров для каждого функционального блока
+# Include all sub-routers
 router.include_router(auth_router)
 router.include_router(users_router)
 router.include_router(uploads_router)
