@@ -7,6 +7,8 @@ import AccountSettings from './AccountSettings';
 import Generator from './Generator';
 import GenerationHistory from './GenerationHistory';
 import NotFound from './NotFound';
+import ProtectedRoute from './components/ProtectedRoute';
+import authService from './services/auth.service';
 
 // Компонент логотипа
 const Logo: React.FC = () => (
@@ -58,6 +60,12 @@ const App: React.FC = () => {
 
   const HomePage = () => {
     const navigate = useNavigate();
+    const isAuthenticated = authService.isAuthenticated();
+    
+    const handleLogout = async () => {
+      await authService.logout();
+      navigate('/');
+    };
     
     return (
       <>
@@ -70,8 +78,17 @@ const App: React.FC = () => {
               <Link to="/instruction" className="nav-link">Инструкция</Link>
             </div>
             <div className="nav-buttons">
-              <button onClick={() => navigate('/login')} className="nav-button nav-button-outline">Войти</button>
-              <button onClick={() => navigate('/register')} className="nav-button nav-button-primary">Создать аккаунт</button>
+              {isAuthenticated ? (
+                <>
+                  <button onClick={() => navigate('/generator')} className="nav-button nav-button-primary">Генератор</button>
+                  <button onClick={handleLogout} className="nav-button nav-button-outline">Выйти</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => navigate('/login')} className="nav-button nav-button-outline">Войти</button>
+                  <button onClick={() => navigate('/register')} className="nav-button nav-button-primary">Создать аккаунт</button>
+                </>
+              )}
             </div>
           </div>
         </nav>
@@ -83,7 +100,9 @@ const App: React.FC = () => {
               <p className="hero-description">
                 i2D - это онлайн сервис, который позволит вам быстро сгенерировать название заголовки и описание к вашему товару по фото.
               </p>
-              <button onClick={() => navigate('/register')} className="button button-primary">Начать</button>
+              <button onClick={() => navigate(isAuthenticated ? '/generator' : '/register')} className="button button-primary">
+                {isAuthenticated ? 'Начать генерацию' : 'Начать'}
+              </button>
             </div>
           </header>
 
@@ -131,7 +150,9 @@ const App: React.FC = () => {
                 <h2 className="cta-title">Готовы начать?</h2>
                 <p className="cta-description">Генерация заголовка и описания для товаров</p>
               </div>
-              <button onClick={() => navigate('/register')} className="cta-button">Создать аккаунт</button>
+              <button onClick={() => navigate(isAuthenticated ? '/generator' : '/register')} className="cta-button">
+                {isAuthenticated ? 'Перейти к генератору' : 'Создать аккаунт'}
+              </button>
             </div>
           </section>
         </div>
@@ -161,50 +182,6 @@ const App: React.FC = () => {
     );
   };
 
-  const InstructionPage = () => {
-    const navigate = useNavigate();
-    
-    return (
-      <>
-        <nav className="navbar">
-          <div className="navbar-container">
-            <div className="navbar-left">
-              <Link to="/" className="logo">
-                <Logo />
-              </Link>
-              <Link to="/instruction" className="nav-link">Инструкция</Link>
-            </div>
-            <div className="nav-buttons">
-              <button onClick={() => navigate('/login')} className="nav-button nav-button-outline">Войти</button>
-              <button onClick={() => navigate('/register')} className="nav-button nav-button-primary">Создать аккаунт</button>
-            </div>
-          </div>
-        </nav>
-        
-        <div className="main-content" style={{ minHeight: '60vh', padding: '80px 0' }}>
-          <div className="container">
-            <h1 className="hero-title">Инструкция по использованию</h1>
-            <p className="hero-description">Здесь будет инструкция по работе с сервисом</p>
-          </div>
-        </div>
-        
-        <footer className="footer">
-          <div className="footer-container">
-            <div className="footer-left">
-              <h3 className="footer-title">Что такое i2D?</h3>
-              <p className="footer-description">
-                Lorem ipsum dolor sit amet consectetur. Tempus nisl praesent a eget vitae nunc pulvinar phasellus.
-              </p>
-              <div className="footer-copyright">
-                <p>© 2026 i2D.</p>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </>
-    );
-  };
-
   return (
     <Router>
       <Routes>
@@ -213,9 +190,24 @@ const App: React.FC = () => {
         <Route path="/register" element={<Login />} />
         <Route path="/forgot-password" element={<Login />} />
         <Route path="/instruction" element={<Instruction />} />
-        <Route path="/settings" element={<AccountSettings />} />
-        <Route path="/generator" element={<Generator />} />
-        <Route path="/account" element={<GenerationHistory />} />
+        
+        {/* Защищенные маршруты */}
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <AccountSettings />
+          </ProtectedRoute>
+        } />
+        <Route path="/generator" element={
+          <ProtectedRoute>
+            <Generator />
+          </ProtectedRoute>
+        } />
+        <Route path="/account" element={
+          <ProtectedRoute>
+            <GenerationHistory />
+          </ProtectedRoute>
+        } />
+        
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>

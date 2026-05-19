@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import authService from './services/auth.service';
 import './App.css';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const getCurrentPage = () => {
     if (location.pathname === '/register') return 'register';
@@ -18,21 +21,47 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentPage === 'register') {
-      if (password !== confirmPassword) {
-        alert('Пароли не совпадают');
-        return;
+    setError('');
+    setLoading(true);
+
+    try {
+      if (currentPage === 'register') {
+        if (password !== confirmPassword) {
+          setError('Пароли не совпадают');
+          setLoading(false);
+          return;
+        }
+        if (password.length < 6) {
+          setError('Пароль должен содержать минимум 6 символов');
+          setLoading(false);
+          return;
+        }
+        await authService.register({
+          email,
+          username: accountName,
+          password,
+        });
+        alert('Регистрация успешна! Пожалуйста, войдите.');
+        navigate('/login');
+      } else if (currentPage === 'login') {
+        await authService.login({
+          username: accountName || email,
+          password,
+        });
+        alert('Вход выполнен!');
+        navigate('/');
+      } else {
+        await authService.forgotPassword({ email });
+        alert('Письмо для сброса пароля отправлено на email');
+        navigate('/login');
       }
-      alert('Регистрация успешна!');
-      navigate('/login');
-    } else if (currentPage === 'login') {
-      alert('Вход выполнен!');
-      navigate('/');
-    } else {
-      alert('Письмо отправлено на email');
-      navigate('/login');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || err.response?.data?.message || 'Произошла ошибка';
+      setError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -52,14 +81,34 @@ const Login = () => {
 
       {/* Правая часть с формами */}
       <div className="auth-form-wrapper">
-        
+        {error && (
+          <div className="error-message" style={{
+            backgroundColor: '#fee2e2',
+            color: '#dc2626',
+            padding: '12px',
+            borderRadius: '8px',
+            marginBottom: '16px',
+            fontSize: '14px'
+          }}>
+            {error}
+          </div>
+        )}
+
         {/* Форма входа - по дизайну */}
         {currentPage === 'login' && (
           <div className="auth-form">
-            <h2 className="form-question">ВЫ, nickname?</h2>
+            <h2 className="form-question">ВЫ, {accountName || 'nickname'}?</h2>
             <p className="form-hint">Введите пароль от аккаунта</p>
 
             <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                className="auth-input"
+                placeholder="Имя аккаунта или email"
+                value={accountName}
+                onChange={(e) => setAccountName(e.target.value)}
+                required
+              />
               <input
                 type="password"
                 className="auth-input"
@@ -69,8 +118,8 @@ const Login = () => {
                 required
               />
 
-              <button type="submit" className="auth-btn">
-                Войти
+              <button type="submit" className="auth-btn" disabled={loading}>
+                {loading ? 'Загрузка...' : 'Войти'}
               </button>
             </form>
 
@@ -129,8 +178,8 @@ const Login = () => {
                 Нажимая на кнопку "Создать аккаунт", вы соглашаетесь с условиями предоставления услуг и политикой конфиденциальности.
               </p>
 
-              <button type="submit" className="auth-btn">
-                Создать аккаунт
+              <button type="submit" className="auth-btn" disabled={loading}>
+                {loading ? 'Загрузка...' : 'Создать аккаунт'}
               </button>
             </form>
 
@@ -150,16 +199,16 @@ const Login = () => {
 
             <form onSubmit={handleSubmit}>
               <input
-                type="text"
+                type="email"
                 className="auth-input"
-                placeholder="Введите вашу логин"
+                placeholder="Введите ваш email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
 
-              <button type="submit" className="auth-btn">
-                Отправить
+              <button type="submit" className="auth-btn" disabled={loading}>
+                {loading ? 'Загрузка...' : 'Отправить'}
               </button>
             </form>
 
