@@ -1,10 +1,13 @@
 from datetime import date, datetime
-from typing import List, Optional, Literal
+from typing import List, Literal, Optional
 from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HistoryItemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     user_id: UUID
     image_url: str
@@ -14,19 +17,16 @@ class HistoryItemResponse(BaseModel):
     created_at: datetime
     modified_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class HistoryCreateRequest(BaseModel):
-    image_url: str = Field(..., description="URL сгенерированного изображения")
+    image_url: str = Field(..., max_length=1000)
     title: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(..., min_length=1, max_length=1000)
+    description: str = Field(..., min_length=1, max_length=5000)
 
 
 class HistoryUpdateRequest(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, min_length=1, max_length=1000)
+    description: Optional[str] = Field(None, min_length=1, max_length=5000)
 
 
 class HistoryPaginationResponse(BaseModel):

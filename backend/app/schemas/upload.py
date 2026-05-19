@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Optional
+from typing import List
 from uuid import UUID
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict
 
 
 class FileUploadResponse(BaseModel):
@@ -9,16 +10,16 @@ class FileUploadResponse(BaseModel):
     url: str
     size: int
     type: str
-
-    class Config:
-        from_attributes = True
+    original_filename: str
 
 
-class PhotoUploadRequest(BaseModel):
-    file: bytes  # Multipart form-data will provide this as bytes
+class FileUploadBatchResponse(BaseModel):
+    files: List[FileUploadResponse]
 
 
 class FileInfoResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: UUID
     url: str
     size: int
@@ -26,6 +27,3 @@ class FileInfoResponse(BaseModel):
     original_filename: str
     mime_type: str
     uploaded_at: datetime
-
-    class Config:
-        from_attributes = True
