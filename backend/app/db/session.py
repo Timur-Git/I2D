@@ -1,24 +1,21 @@
-from contextlib import asynccontextmanager
-from typing import Generator, AsyncGenerator
+from typing import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import (
-    AsyncSession, 
-    create_async_engine, 
-    async_sessionmaker
-)
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from app.core.database import engine, Base
+from app.core.database import Base, engine
 
 
 async_session_maker = async_sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False, autocommit=False, autoflush=False
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+    autocommit=False,
+    autoflush=False,
 )
 
 
-@asynccontextmanager
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency для получения асинхронной сессии базы данных."""
+    """FastAPI dependency that commits successful requests and rolls back errors."""
     async with async_session_maker() as session:
         try:
             yield session
@@ -28,7 +25,6 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
 
 
-async def create_db_and_tables():
-    """Асинхронная функция для создания таблиц в БД."""
+async def create_db_and_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

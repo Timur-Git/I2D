@@ -1,99 +1,103 @@
+import asyncio
+from urllib.parse import unquote, urlparse
+
 import boto3
 from botocore.config import Config
-from typing import Optional
+from botocore.exceptions import ClientError
+
 from app.config import settings
 
 
 class MinioClient:
-    """Клиент для работы с MinIO/S3 объектным хранилищем."""
-    
     def __init__(self):
-        self.endpoint_url = f"http://{settings.minio_endpoint}"
-        
-        # Create S3 client with config for better connection handling
+        scheme = "https" if settings.minio_secure else "http"
+        self.endpoint_url = f"{scheme}://{settings.minio_endpoint}"
+        public_endpoint = settings.minio_public_endpoint or settings.minio_endpoint
+        self.public_endpoint_url = f"{scheme}://{public_endpoint}"
+        self.bucket = settings.minio_bucket
         self.client = boto3.client(
-            's3',
+            "s3",
             endpoint_url=self.endpoint_url,
             aws_access_key_id=settings.minio_access_key,
             aws_secret_access_key=settings.minio_secret_key,
-            region_name='us-east-1',  # Default region for MinIO
-            config=Config(signature_version='s3v4'),
+            region_name="us-east-1",
+            config=Config(signature_version="s3v4"),
         )
-        
-        self.bucket = settings.minio_bucket
-    
+
+    def _public_url(self, object_name: str) -> str:
+        return f"{self.public_endpoint_url}/{self.bucket}/{object_name}"
+
+    def object_name_from_reference(self, file_reference: str) -> str:
+        parsed = urlparse(file_reference)
+        if parsed.scheme and parsed.netloc:
+            path = unquote(parsed.path).lstrip("/")
+        else:
+            path = file_reference.lstrip("/")
+
+        bucket_prefix = f"{self.bucket}/"
+        if path.startswith(bucket_prefix):
+            path = path[len(bucket_prefix):]
+
+        return path
+
     async def bucket_exists(self) -> bool:
-        """Проверка существования бакета."""
         try:
-            await self.client.head_bucket(Bucket=self.bucket)
+            await asyncio.to_thread(self.client.head_bucket, Bucket=self.bucket)
             return True
-        except Exception as e:
-            print(f"Bucket not found or error: {e}")
+        except ClientError:
             return False
-    
-    async def create_bucket_if_not_exists(self):
-        """Создать бакет если его нет."""
-        exists = await self.bucket_exists()
-        if not exists:
-            await self.client.create_bucket(
-                Bucket=self.bucket,
-                CreateBucketConfiguration={'LocationConstraint': 'us-east-1'} if settings.minio_endpoint.startswith('localhost') else None
-            )
-    
-    async def upload_file(self, file_content: bytes, filename: str, content_type: str = '') -> str:
-        """Загрузить файл в MinIO."""
+
+    async def create_bucket_if_not_exists(self) -> None:
+        if not await self.bucket_exists():
+            await asyncio.to_thread(self.client.create_bucket, Bucket=self.bucket)
+
+    async def upload_file(self, file_content: bytes, filename: str, content_type: str = "") -> str:
         await self.create_bucket_if_not_exists()
-        
-        # Generate unique filename to avoid collisions
-        import uuid
-        unique_filename = f"{uuid.uuid4().hex}_{filename}"
-        
-        url = f"{self.endpoint_url}/{self.bucket}/{unique_filename}"
-        
-        await self.client.put_object(
+        object_name = filename.lstrip("/")
+        await asyncio.to_thread(
+            self.client.put_object,
             Bucket=self.bucket,
-            Key=unique_filename,
+            Key=object_name,
             Body=file_content,
-            ContentType=content_type or 'application/octet-stream',
+            ContentType=content_type or "application/octet-stream",
         )
-        
-        return url
-    
-    async def delete_file(self, file_id: str) -> bool:
-        """Удалить файл по ID."""
-        import os
-        from urllib.parse import urlparse
-        
-        # Extract filename from URL or use ID as key
-        if file_id.startswith(self.endpoint_url):
-            path = file_id.replace(self.endpoint_url + '/', '')
-        else:
-            path = file_id
-        
+        return self._public_url(object_name)
+
+    async def download_file(self, file_reference: str) -> bytes:
+        object_name = self.object_name_from_reference(file_reference)
+        response = await asyncio.to_thread(
+            self.client.get_object,
+            Bucket=self.bucket,
+            Key=object_name,
+        )
         try:
-            await self.client.delete_object(Bucket=self.bucket, Key=path)
+            return await asyncio.to_thread(response["Body"].read)
+        finally:
+            response["Body"].close()
+
+    async def delete_file(self, file_reference: str) -> bool:
+        object_name = self.object_name_from_reference(file_reference)
+        try:
+            await asyncio.to_thread(self.client.delete_object, Bucket=self.bucket, Key=object_name)
             return True
-        except Exception:
+        except ClientError:
             return False
-    
-    async def get_file_info(self, file_id: str) -> dict:
-        """Получить информацию о файле."""
-        import os
-        from urllib.parse import urlparse
-        
-        if file_id.startswith(self.endpoint_url):
-            path = file_id.replace(self.endpoint_url + '/', '')
-        else:
-            path = file_id
-        
+
+    async def get_file_info(self, file_reference: str) -> dict:
+        object_name = self.object_name_from_reference(file_reference)
         try:
-            response = await self.client.head_object(Bucket=self.bucket, Key=path)
-            return {
-                'url': file_id,
-                'size': response['ContentLength'],
-                'type': response.get('ContentType', ''),
-                'original_filename': os.path.basename(path),
-                'mime_type': response.get('ContentType', ''),
-            }
-        except Exception:
+            response = await asyncio.to_thread(
+                self.client.head_object,
+                Bucket=self.bucket,
+                Key=object_name,
+            )
+        except ClientError:
             return {}
+
+        return {
+            "url": self._public_url(object_name),
+            "size": response["ContentLength"],
+            "type": response.get("ContentType", ""),
+            "original_filename": object_name.rsplit("/", 1)[-1],
+            "mime_type": response.get("ContentType", ""),
+        }

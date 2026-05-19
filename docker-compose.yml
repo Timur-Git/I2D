@@ -1,0 +1,114 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: i2d-postgres
+    environment:
+      POSTGRES_DB: i2d_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d i2d_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: i2d-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ml:
+    build:
+      context: ./ml-sevice
+    container_name: i2d-ml
+    environment:
+      APP_NAME: I2D ML Service
+      DEBUG: "False"
+      API_V1_PREFIX: /api/v1
+      YOLO_MODEL_PATH: yolov8n.pt
+      YOLO_CONFIDENCE: "0.4"
+      YOLO_IOU: "0.5"
+      CROP_PADDING: "20"
+      LM_STUDIO_URL: http://host.docker.internal:1234/v1
+      LM_STUDIO_API_KEY: lm-studio
+      LM_STUDIO_MODEL: qwen/qwen3.5-9b
+      LLM_TEMPERATURE: "0.4"
+      LLM_TOP_P: "0.9"
+      LLM_MAX_TOKENS: "2000"
+    ports:
+      - "8001:8001"
+    volumes:
+      - yolo_models:/root/.cache/ultralytics
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  backend:
+    build:
+      context: ./backend
+    container_name: i2d-backend
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      APP_NAME: I2D Backend
+      DEBUG: "False"
+      API_V1_PREFIX: /api/v1
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: i2d_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: uploads
+      MINIO_SECURE: "False"
+      MINIO_PUBLIC_ENDPOINT: localhost:9000
+      SECRET_KEY: change-this-dev-compose-secret-key-at-least-32-chars
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      REFRESH_TOKEN_EXPIRE_DAYS: "30"
+      ML_SERVICE_URL: http://ml:8001/api/v1/generate
+      ML_SERVICE_TIMEOUT_SECONDS: "180"
+      ALLOW_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+      ALLOW_METHODS: "*"
+      ALLOW_HEADERS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      ml:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health').read()"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  minio_data:
+  yolo_models:

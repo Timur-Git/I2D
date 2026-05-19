@@ -4,6 +4,8 @@ from .auth import (
     UserLoginRequest,
     ForgotPasswordRequest,
     ChangePasswordRequest,
+    RefreshTokenRequest,
+    TokenPairResponse,
     AuthRegisterResponse,
     AuthLoginResponse,
     MessageResponse,
@@ -18,7 +20,7 @@ from .user import (
 
 from .upload import (
     FileUploadResponse,
-    PhotoUploadRequest,
+    FileUploadBatchResponse,
     FileInfoResponse,
 )
 
@@ -44,6 +46,8 @@ __all__ = [
     "UserLoginRequest",
     "ForgotPasswordRequest",
     "ChangePasswordRequest",
+    "RefreshTokenRequest",
+    "TokenPairResponse",
     "AuthRegisterResponse",
     "AuthLoginResponse",
     "MessageResponse",
@@ -54,7 +58,7 @@ __all__ = [
     "ProfilePhotoUpdate",
     # Upload
     "FileUploadResponse",
-    "PhotoUploadRequest",
+    "FileUploadBatchResponse",
     "FileInfoResponse",
     # Generate
     "GenerateRequest",
