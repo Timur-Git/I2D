@@ -1,4 +1,3 @@
-// src/GenerationHistory.tsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import HistoryDetail from './HistoryDetail';
@@ -17,31 +16,173 @@ const GenerationHistory: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const itemsPerPage = 8;
 
-  // Данные истории генераций с изображениями
+  // Данные истории генераций с множественными изображениями
   interface HistoryItem {
     id: number;
     title: string;
     createdAt: string;
     modifiedAt: string | null;
     description: string;
-    imageUrl: string;
+    imageUrls: string[];
   }
 
   const [historyItems] = useState<HistoryItem[]>([
-    { id: 1, title: 'Lorem ipsum', createdAt: '09.12.2013', modifiedAt: '15.07.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop1/400/200' },
-    { id: 2, title: 'Lorem ipsum', createdAt: '09.12.2013', modifiedAt: '15.02.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop2/400/200' },
-    { id: 3, title: 'Lorem ipsum', createdAt: '09.12.2013', modifiedAt: null, description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop3/400/200' },
-    { id: 4, title: 'Lorem ipsum', createdAt: '10.01.2014', modifiedAt: '20.03.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop4/400/200' },
-    { id: 5, title: 'Lorem ipsum', createdAt: '15.02.2014', modifiedAt: '01.04.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop5/400/200' },
-    { id: 6, title: 'Lorem ipsum', createdAt: '20.03.2014', modifiedAt: '10.05.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop6/400/200' },
-    { id: 7, title: 'Lorem ipsum', createdAt: '05.04.2014', modifiedAt: null, description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop7/400/200' },
-    { id: 8, title: 'Lorem ipsum', createdAt: '12.05.2014', modifiedAt: '18.06.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop8/400/200' },
-    { id: 9, title: 'Lorem ipsum', createdAt: '18.06.2014', modifiedAt: '22.07.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop9/400/200' },
-    { id: 10, title: 'Lorem ipsum', createdAt: '25.07.2014', modifiedAt: '30.08.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop10/400/200' },
-    { id: 11, title: 'Lorem ipsum', createdAt: '03.08.2014', modifiedAt: '05.09.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop11/400/200' },
-    { id: 12, title: 'Lorem ipsum', createdAt: '10.09.2014', modifiedAt: null, description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop12/400/200' },
-    { id: 13, title: 'Lorem ipsum', createdAt: '15.10.2014', modifiedAt: '20.11.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop13/400/200' },
-    { id: 14, title: 'Lorem ipsum', createdAt: '22.11.2014', modifiedAt: '25.12.2027', description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', imageUrl: 'https://picsum.photos/seed/laptop14/400/200' },
+    { 
+      id: 1, 
+      title: 'Lorem ipsum', 
+      createdAt: '09.12.2013', 
+      modifiedAt: '15.07.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop1_1/400/200',
+        'https://picsum.photos/seed/laptop1_2/400/200',
+        'https://picsum.photos/seed/laptop1_3/400/200'
+      ] 
+    },
+    { 
+      id: 2, 
+      title: 'Lorem ipsum', 
+      createdAt: '09.12.2013', 
+      modifiedAt: '15.02.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop2_1/400/200',
+        'https://picsum.photos/seed/laptop2_2/400/200'
+      ] 
+    },
+    { 
+      id: 3, 
+      title: 'Lorem ipsum', 
+      createdAt: '09.12.2013', 
+      modifiedAt: null, 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop3_1/400/200'
+      ] 
+    },
+    { 
+      id: 4, 
+      title: 'Lorem ipsum', 
+      createdAt: '10.01.2014', 
+      modifiedAt: '20.03.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop4_1/400/200',
+        'https://picsum.photos/seed/laptop4_2/400/200',
+        'https://picsum.photos/seed/laptop4_3/400/200',
+        'https://picsum.photos/seed/laptop4_4/400/200'
+      ] 
+    },
+    { 
+      id: 5, 
+      title: 'Lorem ipsum', 
+      createdAt: '15.02.2014', 
+      modifiedAt: '01.04.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop5_1/400/200',
+        'https://picsum.photos/seed/laptop5_2/400/200'
+      ] 
+    },
+    { 
+      id: 6, 
+      title: 'Lorem ipsum', 
+      createdAt: '20.03.2014', 
+      modifiedAt: '10.05.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop6_1/400/200'
+      ] 
+    },
+    { 
+      id: 7, 
+      title: 'Lorem ipsum', 
+      createdAt: '05.04.2014', 
+      modifiedAt: null, 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop7_1/400/200',
+        'https://picsum.photos/seed/laptop7_2/400/200',
+        'https://picsum.photos/seed/laptop7_3/400/200'
+      ] 
+    },
+    { 
+      id: 8, 
+      title: 'Lorem ipsum', 
+      createdAt: '12.05.2014', 
+      modifiedAt: '18.06.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop8_1/400/200'
+      ] 
+    },
+    { 
+      id: 9, 
+      title: 'Lorem ipsum', 
+      createdAt: '18.06.2014', 
+      modifiedAt: '22.07.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop9_1/400/200',
+        'https://picsum.photos/seed/laptop9_2/400/200'
+      ] 
+    },
+    { 
+      id: 10, 
+      title: 'Lorem ipsum', 
+      createdAt: '25.07.2014', 
+      modifiedAt: '30.08.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop10_1/400/200',
+        'https://picsum.photos/seed/laptop10_2/400/200',
+        'https://picsum.photos/seed/laptop10_3/400/200'
+      ] 
+    },
+    { 
+      id: 11, 
+      title: 'Lorem ipsum', 
+      createdAt: '03.08.2014', 
+      modifiedAt: '05.09.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop11_1/400/200'
+      ] 
+    },
+    { 
+      id: 12, 
+      title: 'Lorem ipsum', 
+      createdAt: '10.09.2014', 
+      modifiedAt: null, 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop12_1/400/200',
+        'https://picsum.photos/seed/laptop12_2/400/200'
+      ] 
+    },
+    { 
+      id: 13, 
+      title: 'Lorem ipsum', 
+      createdAt: '15.10.2014', 
+      modifiedAt: '20.11.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop13_1/400/200',
+        'https://picsum.photos/seed/laptop13_2/400/200',
+        'https://picsum.photos/seed/laptop13_3/400/200',
+        'https://picsum.photos/seed/laptop13_4/400/200'
+      ] 
+    },
+    { 
+      id: 14, 
+      title: 'Lorem ipsum', 
+      createdAt: '22.11.2014', 
+      modifiedAt: '25.12.2027', 
+      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
+      imageUrls: [
+        'https://picsum.photos/seed/laptop14_1/400/200'
+      ] 
+    },
   ]);
 
   const openDetail = (item: HistoryItem) => {
@@ -792,9 +933,26 @@ const GenerationHistory: React.FC = () => {
               <div style={{
                 width: '100%',
                 height: '140px',
-                background: `url(${item.imageUrl}) center/cover`,
-                backgroundColor: '#E5E7EB'
-              }} />
+                background: `url(${item.imageUrls[0]}) center/cover`,
+                backgroundColor: '#E5E7EB',
+                position: 'relative'
+              }}>
+                {item.imageUrls.length > 1 && (
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '8px',
+                    right: '8px',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '12px',
+                    padding: '2px 8px',
+                    fontSize: '11px',
+                    color: '#fff',
+                    fontFamily: 'Rubik'
+                  }}>
+                    +{item.imageUrls.length - 1}
+                  </div>
+                )}
+              </div>
               
               <div style={{
                 padding: '16px',

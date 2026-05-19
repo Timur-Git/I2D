@@ -6,6 +6,7 @@ import Instruction from './Instruction';
 import AccountSettings from './AccountSettings';
 import Generator from './Generator';
 import GenerationHistory from './GenerationHistory';
+import NotFound from './NotFound';
 
 // Компонент логотипа
 const Logo: React.FC = () => (
@@ -215,6 +216,7 @@ const App: React.FC = () => {
         <Route path="/settings" element={<AccountSettings />} />
         <Route path="/generator" element={<Generator />} />
         <Route path="/account" element={<GenerationHistory />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

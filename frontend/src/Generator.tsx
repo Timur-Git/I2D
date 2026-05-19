@@ -1,29 +1,66 @@
-// src/Generator.tsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 const Generator: React.FC = () => {
   const navigate = useNavigate();
-  const [uploadedPhoto, setUploadedPhoto] = useState<string | null>(null);
+  
+  // Множественные фото
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showDownloadMenu, setShowDownloadMenu] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [generatedTitle, setGeneratedTitle] = useState<string>('');
   const [generatedDescription, setGeneratedDescription] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [showSaveButton, setShowSaveButton] = useState<boolean>(true);
 
+  // Обработка загрузки нескольких фото
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    const files = e.target.files;
+    if (files) {
+      const newPhotos: string[] = [];
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          newPhotos.push(reader.result as string);
+          if (newPhotos.length === files.length) {
+            setUploadedPhotos(prev => [...prev, ...newPhotos]);
+            setCurrentPhotoIndex(0);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
   };
 
+  // Удаление фото
+  const removePhoto = (indexToRemove: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUploadedPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+    if (currentPhotoIndex >= uploadedPhotos.length - 1 && currentPhotoIndex > 0) {
+      setCurrentPhotoIndex(currentPhotoIndex - 1);
+    }
+  };
+
+  // Следующее фото
+  const nextPhoto = () => {
+    if (currentPhotoIndex < uploadedPhotos.length - 1) {
+      setCurrentPhotoIndex(currentPhotoIndex + 1);
+    }
+  };
+
+  // Предыдущее фото
+  const prevPhoto = () => {
+    if (currentPhotoIndex > 0) {
+      setCurrentPhotoIndex(currentPhotoIndex - 1);
+    }
+  };
+
+  // Генерация описания на основе количества загруженных фото
   const handleGenerate = () => {
-    if (!uploadedPhoto) {
+    if (uploadedPhotos.length === 0) {
       alert('Сначала загрузите фото!');
       return;
     }
@@ -33,10 +70,94 @@ const Generator: React.FC = () => {
     setShowSaveButton(true);
     
     setTimeout(() => {
-      setGeneratedTitle('Lorem ipsum semper');
-      setGeneratedDescription('Lorem ipsum dolor sit amet consectetur. Facilisis diam in neque mauris lectus iaculis lorem eget ut. Id adipiscing eget in arcu nunc scelerisque nulla maecenas amet. Accumsan vulputate id libero imperdiet at. Semper faucibus viverra sit ut urna. Tristique ut metus ipsum scelerisque porttitor vitae. Arcu mi lacus in semper non. Viverra arcu ac amet diam facilisis. Fermentum etiam cursus nunc nisl mauris mauris sed enim purus. Rhoncus amet ut rhoncus vestibulum faucibus. Imperdiet scelerisque ultrices viverra rhoncus donec vulputate dignissim euismod ut. Arcu duis turpis est cras ultrices nunc. Cum morbi nunc faucibus sed sollicitudin nam eros. Euismod auctor id massa bibendum tortor eget venenatis nibh massa. Sit dignissim suspendisse risus enim sapien. Et aenean urna porta ullamcorper. Ac id magna et arcu bibendum sed semper. Volutpat viverra sit eu varius lobortis nunc nec laoreet ut. Est risus ut viverra porta quis risus ut purus dignissim. Lorem lectus blandit tincidunt mattis pulvinar sit. Integer mi habitasse quam nec sit orci. Sodales viverra pellentesque dolor lectus ut et velit velit aliquet. Donec proin quam sem id. Accumsan egestas tristique erat a. Gravida vel vulputate nunc ipsum dignissim. A et cursus dis porttitor pharetra et ornare facilisis vitae. Convallis adipiscing sit odio vel tempus non. Etiam quam enim tortor urna quam euismod nec montes. Id morbi et in adipiscing porttitor tincidunt semper integer semper. Felis sapien molestie pellentesque diam velit ut eu amet. At nullam nunc gravida eu eu nibh. Dignissim egestas elit phasellus mollis ante augue malesuada ac pellentesque. Arcu tempor urna cras eget donec. Tortor urna accumsan sagittis arcu vulputate. Neque volutpat elementum amet praesent arcu sit non facilisi sit. Velit gravida viverra a molestie. Diam enim turpis dolor augue. Dignissim elementum vehicula mauris quis. Urna velit etiam tempus sit. Senectus fermentum sit commodo in scelerisque. Est amet vel lobortis sem vel egestas. Vivamus tempor adipiscing orci dictum eu a feugiat rutrum. Arcu faucibus quis eget ipsum lobortis. Sagittis rutrum euismod duis in nunc. Egestas at diam at tristique pharetra feugiat aliquet nec. Vel nisl consectetur maecenas tincidunt nisi condimentum sit. Vitae nibh cursus consectetur molestie tellus sit ut erat. Urna malesuada ac leo semper cursus turpis ut. Amet urna vestibulum mi accumsan. Amet turpis velit convallis nibh sed eget neque vestibulum purus.');
+      // Разная генерация в зависимости от количества фото
+      const photoCount = uploadedPhotos.length;
+      let title = '';
+      let description = '';
+      
+      if (photoCount === 1) {
+        title = 'Эксклюзивный товар премиум-класса';
+        description = 'Перед вами уникальное изделие, созданное с особым вниманием к деталям. Каждая черта этого продукта продумана до мелочей, чтобы обеспечить максимальный комфорт и удовольствие от использования. Материалы высшего качества и инновационные технологии делают этот товар незаменимым в повседневной жизни. Прочный, надежный и стильный — он станет отличным выбором для тех, кто ценит качество и функциональность. Благодаря эргономичному дизайну и продуманной конструкции, использование этого продукта приносит только положительные эмоции. Не упустите возможность приобрести товар, который прослужит вам долгие годы и будет радовать каждый день своим безупречным качеством и стильным внешним видом.';
+      } else if (photoCount === 2) {
+        title = 'Комплект из 2 товаров для полного комфорта';
+        description = 'Представляем вашему вниманию комплект из двух взаимодополняющих товаров. Первый продукт (на первом фото) отличается своей универсальностью и практичностью. Он создан для ежедневного использования и способен выдерживать интенсивные нагрузки. Второй продукт (на втором фото) — это идеальное дополнение, которое усиливает функциональность основного изделия. Вместе они образуют гармоничный набор, позволяющий решать широкий спектр задач. Высокое качество материалов, современный дизайн и продуманная эргономика делают этот комплект незаменимым помощником в быту и на работе. Приобретая этот набор, вы получаете два отличных продукта по выгодной цене. Каждый из них прошел строгий контроль качества и соответствует всем современным стандартам. Наслаждайтесь удобством и практичностью в одном флаконе!';
+      } else {
+        title = `Набор из ${photoCount} товаров для любых задач`;
+        description = `В этом универсальном наборе собраны все необходимые инструменты и аксессуары для комфортной жизни. Каждый из ${photoCount} товаров заслуживает отдельного внимания. Все предметы набора выполнены из износостойких материалов, устойчивых к механическим повреждениям и долговременной эксплуатации. Благодаря разнообразию функций и продуманной комплектации, вы всегда будете готовы к любым жизненным ситуациям. Компактная упаковка позволяет удобно хранить все элементы набора, не занимая лишнего места. Качественная сборка и надежные механизмы гарантируют долгий срок службы. Этот набор станет отличным подарком для себя или близких. Оцените преимущество покупки всего комплекта по специальной цене — вы экономите время и деньги, получая максимум полезных вещей в одном месте. Доверьтесь нашему качеству и наслаждайтесь результатом!`;
+      }
+      
+      setGeneratedTitle(title);
+      setGeneratedDescription(description);
       setIsLoading(false);
     }, 2000);
+  };
+
+  const downloadFile = (format: 'json' | 'txt' | 'docx') => {
+    const data = {
+      title: generatedTitle,
+      description: generatedDescription,
+      photosCount: uploadedPhotos.length,
+      photos: uploadedPhotos,
+      generatedAt: new Date().toISOString()
+    };
+
+    let content = '';
+    let filename = `generation_${Date.now()}`;
+    let mimeType = '';
+
+    switch (format) {
+      case 'json':
+        content = JSON.stringify(data, null, 2);
+        filename += '.json';
+        mimeType = 'application/json';
+        break;
+      case 'txt':
+        content = `Заголовок:\n${generatedTitle}\n\nОписание:\n${generatedDescription}\n\nДата генерации: ${new Date().toLocaleString()}\nКоличество фото: ${uploadedPhotos.length}`;
+        filename += '.txt';
+        mimeType = 'text/plain';
+        break;
+      case 'docx':
+        content = `
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Генерация описания товара</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; }
+              h1 { color: #651FFF; }
+              .title { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+              .description { font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
+              .meta { color: #666; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ccc; }
+            </style>
+          </head>
+          <body>
+            <h1>Заголовок</h1>
+            <div class="title">${generatedTitle}</div>
+            <h1>Описание</h1>
+            <div class="description">${generatedDescription}</div>
+            <div class="meta">
+              <p>Дата генерации: ${new Date().toLocaleString()}</p>
+              <p>Количество фото: ${uploadedPhotos.length}</p>
+            </div>
+          </body>
+          </html>
+        `;
+        filename += '.doc';
+        mimeType = 'application/msword';
+        break;
+    }
+
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setShowDownloadMenu(false);
+    alert(`Файл ${filename} сохранен!`);
   };
 
   const SettingsIcon = ({ size = 20, color = "#5C5F6E" }) => (
@@ -80,6 +201,33 @@ const Generator: React.FC = () => {
     <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M25 11.25H13.75C12.3693 11.25 11.25 12.3693 11.25 13.75V25C11.25 26.3807 12.3693 27.5 13.75 27.5H25C26.3807 27.5 27.5 26.3807 27.5 25V13.75C27.5 12.3693 26.3807 11.25 25 11.25Z" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M6.25 18.75H5C4.33696 18.75 3.70107 18.4866 3.23223 18.0178C2.76339 17.5489 2.5 16.913 2.5 16.25V5C2.5 4.33696 2.76339 3.70107 3.23223 3.23223C3.70107 2.76339 4.33696 2.5 5 2.5H16.25C16.913 2.5 17.5489 2.76339 18.0178 3.23223C18.4866 3.70107 18.75 4.33696 18.75 5V6.25" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const DownloadIcon = () => (
+    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 2.5V17.5" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M20 12.5L15 17.5L10 12.5" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M5 22.5V25H25V22.5" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const CloseIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4L4 12" stroke="#5C5F6E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 4L12 12" stroke="#5C5F6E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const ChevronLeftIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 18L9 12L15 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const ChevronRightIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 18L15 12L9 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 
@@ -133,6 +281,13 @@ const Generator: React.FC = () => {
     </svg>
   );
 
+  const PlusIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 5V19" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M5 12H19" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
   const handleCopy = () => {
     const textToCopy = `${generatedTitle}\n\n${generatedDescription}`;
     navigator.clipboard.writeText(textToCopy);
@@ -158,7 +313,7 @@ const Generator: React.FC = () => {
   const handleGenerateAgain = () => {
     setIsSaved(false);
     setShowSaveButton(true);
-    setUploadedPhoto(null);
+    setUploadedPhotos([]);
     setGeneratedTitle('');
     setGeneratedDescription('');
     handleGenerate();
@@ -193,7 +348,6 @@ const Generator: React.FC = () => {
     }}>
       <style>{scrollbarStyles}</style>
       
-      {/* Верхний хэдэр */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -216,7 +370,6 @@ const Generator: React.FC = () => {
         </div>
       </div>
 
-      {/* Левое меню */}
       <div style={{
         position: 'absolute',
         left: 0,
@@ -241,7 +394,6 @@ const Generator: React.FC = () => {
           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}><SettingsIcon size={20} color="#5C5F6E" /></Link>
       </div>
 
-      {/* Белый блок Rectangle 86 */}
       <div style={{
         position: 'absolute',
         width: '1256px',
@@ -257,30 +409,161 @@ const Generator: React.FC = () => {
         gap: '30px'
       }}>
         {!isSaved && (
-          /* Серый блок для фото Rectangle 87 - показываем только если не сохранено */
           <div style={{
             boxSizing: 'border-box',
             width: '571px',
             height: '665px',
-            background: uploadedPhoto ? `url(${uploadedPhoto})` : '#E9E9E9',
+            background: uploadedPhotos.length > 0 ? `url(${uploadedPhotos[currentPhotoIndex]})` : '#E9E9E9',
             backgroundColor: '#E9E9E9',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             border: '5px solid #E9E9E9',
             boxShadow: '0px 1px 4px rgba(12, 12, 13, 0.05)',
             borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            position: 'relative',
             overflow: 'hidden'
           }}>
-            {!uploadedPhoto && (
-              <span style={{ fontSize: '16px', color: '#8E91A0' }}>Превью фото</span>
+            {uploadedPhotos.length === 0 ? (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '16px'
+              }}>
+                <span style={{ fontSize: '16px', color: '#8E91A0' }}>Превью фото</span>
+              </div>
+            ) : (
+              <>
+                {/* Навигация по фото */}
+                {uploadedPhotos.length > 1 && (
+                  <>
+                    <button
+                      onClick={prevPhoto}
+                      disabled={currentPhotoIndex === 0}
+                      style={{
+                        position: 'absolute',
+                        left: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: currentPhotoIndex === 0 ? 'default' : 'pointer',
+                        opacity: currentPhotoIndex === 0 ? 0.3 : 1
+                      }}
+                    >
+                      <ChevronLeftIcon />
+                    </button>
+                    <button
+                      onClick={nextPhoto}
+                      disabled={currentPhotoIndex === uploadedPhotos.length - 1}
+                      style={{
+                        position: 'absolute',
+                        right: '10px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'rgba(0,0,0,0.5)',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '36px',
+                        height: '36px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: currentPhotoIndex === uploadedPhotos.length - 1 ? 'default' : 'pointer',
+                        opacity: currentPhotoIndex === uploadedPhotos.length - 1 ? 0.3 : 1
+                      }}
+                    >
+                      <ChevronRightIcon />
+                    </button>
+                  </>
+                )}
+
+                {/* Индикатор количества фото */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '16px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(0,0,0,0.6)',
+                  borderRadius: '20px',
+                  padding: '4px 12px',
+                  color: '#fff',
+                  fontSize: '12px',
+                  fontFamily: 'Rubik'
+                }}>
+                  {currentPhotoIndex + 1} / {uploadedPhotos.length}
+                </div>
+
+                {/* Кнопка удаления фото */}
+                <button
+                  onClick={(e) => removePhoto(currentPhotoIndex, e)}
+                  style={{
+                    position: 'absolute',
+                    top: '10px',
+                    right: '10px',
+                    background: 'rgba(0,0,0,0.6)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '28px',
+                    height: '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <CloseIcon />
+                </button>
+
+                {/* Кнопка добавления еще фото */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    position: 'absolute',
+                    bottom: '16px',
+                    right: '16px',
+                    background: '#651FFF',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    fontFamily: 'Rubik',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    color: '#FFFFFF'
+                  }}
+                >
+                  <PlusIcon />
+                  Добавить фото
+                </button>
+              </>
             )}
+
+            {/* Скрытый input для загрузки нескольких фото */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              style={{ display: 'none' }}
+            />
           </div>
         )}
 
-        {/* Правый блок */}
         <div style={{
           position: 'relative',
           width: !isSaved ? '600px' : '1256px',
@@ -300,7 +583,6 @@ const Generator: React.FC = () => {
               <Loader />
             </div>
           ) : isSaved ? (
-            // Состояние после сохранения - только белый фон, без фото
             <div style={{
               width: '100%',
               height: '100%',
@@ -353,7 +635,6 @@ const Generator: React.FC = () => {
               </button>
             </div>
           ) : generatedTitle ? (
-            // Состояние с результатом - серый фон с кнопками, внутри белый блок с текстом
             <div style={{
               width: '100%',
               height: '100%',
@@ -365,7 +646,6 @@ const Generator: React.FC = () => {
               flexDirection: 'column',
               gap: '24px'
             }}>
-              {/* Белый блок внутри серого */}
               <div style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '16px',
@@ -375,7 +655,6 @@ const Generator: React.FC = () => {
                 flexDirection: 'column',
                 overflow: 'hidden'
               }}>
-                {/* Заголовок - серый блок */}
                 <div style={{
                   width: '100%',
                   height: '32px',
@@ -396,7 +675,6 @@ const Generator: React.FC = () => {
                   }}>Заголовок</span>
                 </div>
                 
-                {/* Текст заголовка */}
                 <div style={{
                   padding: '0 16px',
                   marginBottom: '24px',
@@ -410,7 +688,6 @@ const Generator: React.FC = () => {
                   }}>{generatedTitle}</span>
                 </div>
 
-                {/* Описание - серый блок */}
                 <div style={{
                   width: '100%',
                   height: '32px',
@@ -431,7 +708,6 @@ const Generator: React.FC = () => {
                   }}>Описание</span>
                 </div>
                 
-                {/* Блок с текстом описания */}
                 <div className="custom-scroll" style={{
                   backgroundColor: 'transparent',
                   flex: 1,
@@ -451,12 +727,85 @@ const Generator: React.FC = () => {
                 </div>
               </div>
 
-              {/* Кнопки действий - на сером фоне */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', gap: '20px' }}>
                   <div onClick={handleRegenerate} style={{ cursor: 'pointer' }}><RefreshIcon /></div>
                   <div onClick={handleEdit} style={{ cursor: 'pointer' }}><EditIcon /></div>
                   <div onClick={handleCopy} style={{ cursor: 'pointer' }}><CopyIcon /></div>
+                  <div style={{ position: 'relative' }}>
+                    <div onClick={() => setShowDownloadMenu(!showDownloadMenu)} style={{ cursor: 'pointer' }}><DownloadIcon /></div>
+                    {showDownloadMenu && (
+                      <div style={{
+                        position: 'absolute',
+                        bottom: '40px',
+                        left: '-20px',
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                        padding: '8px 0',
+                        minWidth: '180px',
+                        zIndex: 100
+                      }}>
+                        <button
+                          onClick={() => downloadFile('json')}
+                          style={{
+                            width: '100%',
+                            padding: '10px 16px',
+                            border: 'none',
+                            background: 'none',
+                            textAlign: 'left',
+                            fontFamily: 'Rubik',
+                            fontSize: '14px',
+                            color: '#1F2937',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          Скачать в JSON
+                        </button>
+                        <button
+                          onClick={() => downloadFile('txt')}
+                          style={{
+                            width: '100%',
+                            padding: '10px 16px',
+                            border: 'none',
+                            background: 'none',
+                            textAlign: 'left',
+                            fontFamily: 'Rubik',
+                            fontSize: '14px',
+                            color: '#1F2937',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          Скачать в TXT
+                        </button>
+                        <button
+                          onClick={() => downloadFile('docx')}
+                          style={{
+                            width: '100%',
+                            padding: '10px 16px',
+                            border: 'none',
+                            background: 'none',
+                            textAlign: 'left',
+                            fontFamily: 'Rubik',
+                            fontSize: '14px',
+                            color: '#1F2937',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          Скачать в DOC
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   {showSaveButton ? (
@@ -472,7 +821,6 @@ const Generator: React.FC = () => {
               </div>
             </div>
           ) : (
-            // Начальное состояние - белый блок с двумя кнопками
             <div style={{
               width: '100%',
               height: '100%',
@@ -490,7 +838,7 @@ const Generator: React.FC = () => {
               <div style={{ display: 'flex', gap: '16px', flexDirection: 'row' }}>
                 <label style={{ width: '173px', height: '48px', backgroundColor: '#ECECFE', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontFamily: 'Rubik', fontWeight: 600, fontSize: '16px', color: '#651FFF' }}>
                   Загрузить фото
-                  <input type="file" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
+                  <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} style={{ display: 'none' }} />
                 </label>
                 <button onClick={handleGenerate} disabled={isLoading} style={{ width: '173px', height: '48px', backgroundColor: '#651FFF', borderRadius: '8px', border: 'none', fontFamily: 'Rubik', fontWeight: 600, fontSize: '16px', color: '#FFFFFF', cursor: isLoading ? 'not-allowed' : 'pointer', opacity: isLoading ? 0.6 : 1 }}>
                   Сгенерировать

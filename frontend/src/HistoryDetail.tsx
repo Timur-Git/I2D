@@ -1,4 +1,3 @@
-// src/HistoryDetail.tsx
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -8,7 +7,7 @@ interface HistoryItem {
   createdAt: string;
   modifiedAt: string | null;
   description: string;
-  imageUrl: string;
+  imageUrls: string[]; // Массив URL фото
 }
 
 interface HistoryDetailProps {
@@ -21,6 +20,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(item.title);
   const [editedDescription, setEditedDescription] = useState(item.description);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   const handleCopy = () => {
     const textToCopy = `${item.title}\n\n${item.description}`;
@@ -45,6 +45,18 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
     setIsEditing(false);
     setEditedTitle(item.title);
     setEditedDescription(item.description);
+  };
+
+  const nextPhoto = () => {
+    if (currentPhotoIndex < item.imageUrls.length - 1) {
+      setCurrentPhotoIndex(currentPhotoIndex + 1);
+    }
+  };
+
+  const prevPhoto = () => {
+    if (currentPhotoIndex > 0) {
+      setCurrentPhotoIndex(currentPhotoIndex - 1);
+    }
   };
 
   const SettingsIcon = ({ size = 20, color = "#5C5F6E" }) => (
@@ -112,6 +124,18 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M15 10H5" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       <path d="M9 14L5 10L9 6" stroke="#651FFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const ChevronLeftIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M15 18L9 12L15 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+
+  const ChevronRightIcon = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 18L15 12L9 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 
@@ -212,15 +236,82 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
           boxSizing: 'border-box',
           width: '571px',
           height: '665px',
-          background: `url(${item.imageUrl})`,
+          background: `url(${item.imageUrls[currentPhotoIndex]})`,
           backgroundColor: '#E9E9E9',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           border: '5px solid #E9E9E9',
           boxShadow: '0px 1px 4px rgba(12, 12, 13, 0.05)',
           borderRadius: '16px',
-          overflow: 'hidden'
-        }} />
+          overflow: 'hidden',
+          position: 'relative'
+        }}>
+          {item.imageUrls.length > 1 && (
+            <>
+              <button
+                onClick={prevPhoto}
+                disabled={currentPhotoIndex === 0}
+                style={{
+                  position: 'absolute',
+                  left: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'rgba(0,0,0,0.5)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: currentPhotoIndex === 0 ? 'default' : 'pointer',
+                  opacity: currentPhotoIndex === 0 ? 0.3 : 1,
+                  zIndex: 10
+                }}
+              >
+                <ChevronLeftIcon />
+              </button>
+              <button
+                onClick={nextPhoto}
+                disabled={currentPhotoIndex === item.imageUrls.length - 1}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'rgba(0,0,0,0.5)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '36px',
+                  height: '36px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: currentPhotoIndex === item.imageUrls.length - 1 ? 'default' : 'pointer',
+                  opacity: currentPhotoIndex === item.imageUrls.length - 1 ? 0.3 : 1,
+                  zIndex: 10
+                }}
+              >
+                <ChevronRightIcon />
+              </button>
+              <div style={{
+                position: 'absolute',
+                bottom: '16px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                background: 'rgba(0,0,0,0.6)',
+                borderRadius: '20px',
+                padding: '4px 12px',
+                color: '#fff',
+                fontSize: '12px',
+                fontFamily: 'Rubik',
+                zIndex: 10
+              }}>
+                {currentPhotoIndex + 1} / {item.imageUrls.length}
+              </div>
+            </>
+          )}
+        </div>
 
         {/* Правая часть с контентом */}
         <div style={{
