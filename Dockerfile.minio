@@ -1,0 +1,23 @@
+FROM minio/minio:latest
+
+# Настройки доступа
+ENV MINIO_ROOT_USER=minioadmin
+ENV MINIO_ROOT_PASSWORD=minioadmin
+
+# Порты: API и Консоль
+EXPOSE 9000
+EXPOSE 9001
+
+# Healthcheck
+HEALTHCHECK --interval=5s --timeout=5s --retries=10 \
+  CMD curl -f http://localhost:9000/minio/health/live || exit 1
+
+# Команда запуска сервера (берется из docker-compose)
+# Важно: путь /data должен быть проброшен в объем для сохранения данных
+CMD ["server", "/data", "--console-address", ":9001"]
+
+# 1. Сборка образа
+#docker build -f Dockerfile.minio -t my-minio .
+
+# 2. Запуск контейнера
+#docker run -d --name i2d-minio -p 9000:9000 -p 9001:9001 -v minio_data:/data my-minio

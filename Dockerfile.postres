@@ -1,0 +1,21 @@
+# Используем официальный образ как базовый
+FROM postgres:16-alpine
+
+# Переменные окружения (безопаснее передавать их при запуске, но можно и здесь)
+ENV POSTGRES_DB=i2d_db
+ENV POSTGRES_USER=postgres
+ENV POSTGRES_PASSWORD=postgres
+
+# Порт по умолчанию для документации
+EXPOSE 5432
+
+# Healthcheck из вашего compose-файла
+HEALTHCHECK --interval=5s --timeout=5s --retries=10 \
+  CMD pg_isready -U postgres -d i2d_db || exit 1
+
+# 1. Сборка образа
+#docker build -f Dockerfile.postgres -t my-postgres .
+
+# 2. Запуск контейнера
+# Обратите внимание: порты (-p) и тома (-v) указываются здесь
+# docker run -d --name i2d-postgres -p 5432:5432 -v postgres_data:/var/lib/postgresql/data my-postgres
