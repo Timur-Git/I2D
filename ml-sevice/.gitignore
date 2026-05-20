@@ -1,0 +1,49 @@
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment variables (never commit!)
+.env
+.env.local
+.env.*.local
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# MinIO temp files
+/tmp/*
+/temp/*
+
+# Logs
+*.log
+logs/
+
+# Testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Alembic migrations (ignore if you prefer auto-generating)
+alembic/versions/*.pyc
+__pycache__/alembic*
