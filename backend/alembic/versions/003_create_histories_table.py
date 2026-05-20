@@ -1,6 +1,6 @@
 """Create generation_histories table.
 
-Revision ID: 003_create_generation_histories_table
+Revision ID: 003_create_histories_table
 Revises: 002_create_file_uploads_table
 Create Date: 2026-05-15
 """
@@ -11,7 +11,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision: str = "003_create_generation_histories_table"
+revision: str = "003_create_histories_table"
 down_revision: Union[str, None] = "002_create_file_uploads_table"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

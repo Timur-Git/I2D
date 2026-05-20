@@ -26,7 +26,7 @@ async def register_user(request: UserRegisterRequest, db: DbSession):
     user, tokens = await AuthService.register(
         db,
         email=str(request.email),
-        account_name=request.account_name,
+        account_name=request.username,
         password=request.password,
     )
     return AuthRegisterResponse(id=user.id, user=user, **tokens)
@@ -34,7 +34,7 @@ async def register_user(request: UserRegisterRequest, db: DbSession):
 
 @router.post("/login", response_model=AuthLoginResponse)
 async def login_user(request: UserLoginRequest, db: DbSession):
-    user, tokens = await AuthService.login(db, email=str(request.email), password=request.password)
+    user, tokens = await AuthService.login(db, email=str(request.username), password=request.password)
     return AuthLoginResponse(user=user, **tokens)
 
 

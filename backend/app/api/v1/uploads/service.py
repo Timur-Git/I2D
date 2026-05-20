@@ -20,6 +20,7 @@ class UploadService:
     ALLOWED_MIME_TYPES = {
         "image/jpeg": "jpg",
         "image/png": "png",
+        "image/webp": "webp",
     }
 
     @classmethod
@@ -149,7 +150,7 @@ class UploadService:
         if declared not in cls.ALLOWED_MIME_TYPES:
             raise HTTPException(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                detail="Only JPG, JPEG and PNG images are allowed",
+                detail="Only JPG, JPEG, PNG and WEBP images are allowed",
             )
         if detected != declared:
             raise HTTPException(
@@ -164,6 +165,8 @@ class UploadService:
             return "image/jpeg"
         if content.startswith(b"\x89PNG\r\n\x1a\n"):
             return "image/png"
+        if len(content) >= 12 and content.startswith(b"RIFF") and content[8:12] == b"WEBP":
+            return "image/webp"
         return None
 
     @staticmethod

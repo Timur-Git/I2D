@@ -15,7 +15,7 @@ class UserResponse(BaseModel):
 
 class UserRegisterRequest(BaseModel):
     email: EmailStr
-    account_name: str = Field(..., min_length=1, max_length=50)
+    username: str = Field(..., min_length=1, max_length=50)
     password: str = Field(..., min_length=8, max_length=128)
 
     @field_validator("email")
@@ -23,17 +23,17 @@ class UserRegisterRequest(BaseModel):
     def normalize_email(cls, value: str) -> str:
         return value.lower()
 
-    @field_validator("account_name")
+    @field_validator("username")
     @classmethod
     def normalize_account_name(cls, value: str) -> str:
         return value.strip()
 
 
 class UserLoginRequest(BaseModel):
-    email: EmailStr
+    username: EmailStr
     password: str = Field(..., min_length=1, max_length=128)
 
-    @field_validator("email")
+    @field_validator("username")
     @classmethod
     def normalize_email(cls, value: str) -> str:
         return value.lower()
