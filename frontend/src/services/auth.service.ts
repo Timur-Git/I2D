@@ -18,7 +18,7 @@ export interface ForgotPasswordData {
 export interface UserProfile {
   id: number;
   email: string;
-  username: string;
+  account_name: string;
   avatar_url?: string;
   created_at: string;
 }

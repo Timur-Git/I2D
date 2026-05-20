@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { GenerationResult } from './services/generation.service';
 
 interface HistoryItem {
   id: number;
@@ -10,8 +11,9 @@ interface HistoryItem {
   imageUrls: string[]; // Массив URL фото
 }
 
+
 interface HistoryDetailProps {
-  item: HistoryItem;
+  item: GenerationResult;
   onBack: () => void;
 }
 
@@ -48,7 +50,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
   };
 
   const nextPhoto = () => {
-    if (currentPhotoIndex < item.imageUrls.length - 1) {
+    if (currentPhotoIndex < item.image_url.length - 1) {
       setCurrentPhotoIndex(currentPhotoIndex + 1);
     }
   };
@@ -236,7 +238,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
           boxSizing: 'border-box',
           width: '571px',
           height: '665px',
-          background: `url(${item.imageUrls[currentPhotoIndex]})`,
+          background: `url(${item.image_url[currentPhotoIndex]})`,
           backgroundColor: '#E9E9E9',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -246,7 +248,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
           overflow: 'hidden',
           position: 'relative'
         }}>
-          {item.imageUrls.length > 1 && (
+          {item.image_url.length > 1 && (
             <>
               <button
                 onClick={prevPhoto}
@@ -273,7 +275,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
               </button>
               <button
                 onClick={nextPhoto}
-                disabled={currentPhotoIndex === item.imageUrls.length - 1}
+                disabled={currentPhotoIndex === item.image_url.length - 1}
                 style={{
                   position: 'absolute',
                   right: '10px',
@@ -287,8 +289,8 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: currentPhotoIndex === item.imageUrls.length - 1 ? 'default' : 'pointer',
-                  opacity: currentPhotoIndex === item.imageUrls.length - 1 ? 0.3 : 1,
+                  cursor: currentPhotoIndex === item.image_url.length - 1 ? 'default' : 'pointer',
+                  opacity: currentPhotoIndex === item.image_url.length - 1 ? 0.3 : 1,
                   zIndex: 10
                 }}
               >
@@ -307,7 +309,7 @@ const HistoryDetail: React.FC<HistoryDetailProps> = ({ item, onBack }) => {
                 fontFamily: 'Rubik',
                 zIndex: 10
               }}>
-                {currentPhotoIndex + 1} / {item.imageUrls.length}
+                {currentPhotoIndex + 1} / {item.image_url.length}
               </div>
             </>
           )}

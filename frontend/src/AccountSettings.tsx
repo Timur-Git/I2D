@@ -1,14 +1,19 @@
 // src/AccountSettings.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import authService, { UserProfile } from './services/auth.service';
 
 const AccountSettings: React.FC = () => {
   const navigate = useNavigate();
   
-  // Данные пользователя
-  const [accountName, setAccountName] = useState('MIKS');
-  const [email, setEmail] = useState('miks@gmail.com');
+  // Состояния для данных пользователя
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [accountName, setAccountName] = useState('');
+  const [email, setEmail] = useState('');
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Данные для безопасности
   const [currentPassword, setCurrentPassword] = useState('');
@@ -16,22 +21,104 @@ const AccountSettings: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [activeSection, setActiveSection] = useState<'settings' | 'security'>('settings');
 
+  // Загрузка данных пользователя при монтировании компонента
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const userData = await authService.getCurrentUser();
+      setUser(userData);
+      setAccountName(userData.account_name);
+      setEmail(userData.email);
+      if (userData.avatar_url) {
+        setProfilePhoto(userData.avatar_url);
+      }
+    } catch (err) {
+      console.error('Failed to load user data:', err);
+      setError('Не удалось загрузить данные пользователя');
+      // Если ошибка авторизации - перенаправляем на логин
+      if (!authService.isAuthenticated()) {
+        navigate('/login');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Обработчик загрузки фото
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    // Проверка размера файла (например, макс 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Файл слишком большой. Максимальный размер: 5MB');
+      return;
+    }
+
+    // Проверка типа файла
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, загрузите изображение');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      // Показываем превью сразу
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Отправляем на сервер
+      const response = await authService.updateAvatar(file);
+      // Обновляем данные пользователя
+      if (user) {
+        setUser({ ...user, avatar_url: response.avatar_url });
+      }
+    } catch (err) {
+      console.error('Failed to upload avatar:', err);
+      alert('Не удалось загрузить фото');
+      // Возвращаем старое фото при ошибке
+      if (user?.avatar_url) {
+        setProfilePhoto(user.avatar_url);
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // Сохранение настроек
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Настройки аккаунта сохранены!');
+    
+    if (!accountName.trim()) {
+      alert('Имя аккаунта не может быть пустым');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const updatedUser = await authService.updateProfile({
+        account_name: accountName,
+        email: email,
+      });
+      
+      setUser(updatedUser);
+      setAccountName(updatedUser.account_name);
+      setEmail(updatedUser.email);
+      alert('Настройки аккаунта сохранены!');
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+      alert('Не удалось сохранить настройки');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Сохранение пароля
@@ -52,9 +139,74 @@ const AccountSettings: React.FC = () => {
   };
 
   // Выход из аккаунта
-  const handleLogout = () => {
-    alert('Вы вышли из аккаунта');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout error:', err);
+      // Всё равно перенаправляем на логин даже при ошибке
+      navigate('/login');
+    }
+  };
+
+  // Показываем загрузку
+  if (isLoading) {
+    return (
+      <div style={{
+        width: '1440px',
+        height: '900px',
+        backgroundColor: '#F9F9FA',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Rubik, sans-serif'
+      }}>
+        <div style={{ fontSize: '16px', color: '#5C5F6E' }}>
+          Загрузка данных...
+        </div>
+      </div>
+    );
+  }
+
+  // Показываем ошибку
+  if (error) {
+    return (
+      <div style={{
+        width: '1440px',
+        height: '900px',
+        backgroundColor: '#F9F9FA',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '16px',
+        fontFamily: 'Rubik, sans-serif'
+      }}>
+        <div style={{ fontSize: '16px', color: '#DC2222' }}>
+          {error}
+        </div>
+        <button
+          onClick={loadUserData}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#651FFF',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontFamily: 'Rubik'
+          }}
+        >
+          Попробовать снова
+        </button>
+      </div>
+    );
+  }
+
+  // Получаем первую букву имени для аватара
+  const getInitial = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
   // Красивая иконка настроек (шестеренка)
@@ -140,7 +292,7 @@ const AccountSettings: React.FC = () => {
       position: 'relative',
       margin: '0 auto'
     }}>
-      {/* Верхний хэдэр - 72px высота */}
+      {/* Верхний хэдэр */}
       <div style={{
         position: 'absolute',
         top: 0,
@@ -154,11 +306,7 @@ const AccountSettings: React.FC = () => {
         padding: '0 24px 0 104px',
         zIndex: 10
       }}>
-        {/* Левая часть хэдэра - пустая */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        </div>
-
-        {/* Центральная часть хэдэра: Аккаунт > Настройки */}
+        {/* Центральная часть хэдэра */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -189,7 +337,7 @@ const AccountSettings: React.FC = () => {
           </span>
         </div>
 
-        {/* Аватар справа */}
+        {/* Аватар справа - используем реальные данные */}
         <div style={{
           width: '44px',
           height: '44px',
@@ -202,10 +350,15 @@ const AccountSettings: React.FC = () => {
           cursor: 'pointer'
         }}>
           {profilePhoto ? (
-            <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img 
+              src={profilePhoto} 
+              alt="Profile" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              onError={() => setProfilePhoto(null)} // Если фото не загрузилось, показываем букву
+            />
           ) : (
             <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>
-              {accountName.charAt(0)}
+              {getInitial(accountName)}
             </span>
           )}
         </div>
@@ -292,7 +445,7 @@ const AccountSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Боковое меню аккаунта (224px x 900px) */}
+      {/* Боковое меню аккаунта */}
       <div style={{
         position: 'absolute',
         left: '80px',
@@ -303,7 +456,6 @@ const AccountSettings: React.FC = () => {
         padding: '24px 0 0 24px',
         zIndex: 15
       }}>
-        {/* Надпись "Общие настройки" */}
         <div style={{
           marginBottom: '24px',
           paddingLeft: '16px'
@@ -321,6 +473,7 @@ const AccountSettings: React.FC = () => {
           </span>
         </div>
 
+        {/* Информация о пользователе - реальные данные */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -339,10 +492,15 @@ const AccountSettings: React.FC = () => {
             overflow: 'hidden'
           }}>
             {profilePhoto ? (
-              <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img 
+                src={profilePhoto} 
+                alt="Profile" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={() => setProfilePhoto(null)}
+              />
             ) : (
               <span style={{ fontSize: '20px', fontWeight: 500, color: '#fff' }}>
-                {accountName.charAt(0)}
+                {getInitial(accountName)}
               </span>
             )}
           </div>
@@ -353,13 +511,13 @@ const AccountSettings: React.FC = () => {
               color: '#5C5F6E',
               marginBottom: '4px'
             }}>
-              {accountName}
+              {accountName || 'Пользователь'}
             </div>
             <div style={{
               fontSize: '12px',
               color: '#5C5F6E'
             }}>
-              {email}
+              {email || 'email@example.com'}
             </div>
           </div>
         </div>
@@ -446,7 +604,7 @@ const AccountSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Основной контент - Белый блок 977x552px */}
+      {/* Основной контент */}
       <div style={{
         position: 'absolute',
         left: '304px',
@@ -462,18 +620,7 @@ const AccountSettings: React.FC = () => {
       }}>
         {activeSection === 'settings' ? (
           <form onSubmit={handleSaveSettings} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px', flexShrink: 0 }}>
-              <UserIcon color="#5C5F6E" />
-              <h2 style={{ 
-                fontSize: '18px', 
-                fontWeight: 500, 
-                color: '#5C5F6E',
-                letterSpacing: '-0.868235px',
-                margin: 0
-              }}>
-                Настройки аккаунта
-              </h2>
-            </div>
+            {/* ... заголовок формы ... */}
 
             <div style={{ marginBottom: '20px', flexShrink: 0 }}>
               <label style={{ 
@@ -489,6 +636,7 @@ const AccountSettings: React.FC = () => {
                 type="text"
                 value={accountName}
                 onChange={(e) => setAccountName(e.target.value)}
+                disabled={isSaving}
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -498,8 +646,9 @@ const AccountSettings: React.FC = () => {
                   borderRadius: '8px',
                   fontFamily: 'Rubik',
                   boxSizing: 'border-box',
-                  backgroundColor: '#F9F9FA',
-                  color: '#5C5F6E'
+                  backgroundColor: isSaving ? '#E0E0E0' : '#F9F9FA',
+                  color: '#5C5F6E',
+                  cursor: isSaving ? 'not-allowed' : 'text'
                 }}
               />
             </div>
@@ -518,6 +667,7 @@ const AccountSettings: React.FC = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isSaving}
                 style={{
                   width: '100%',
                   padding: '12px 16px',
@@ -527,8 +677,9 @@ const AccountSettings: React.FC = () => {
                   borderRadius: '8px',
                   fontFamily: 'Rubik',
                   boxSizing: 'border-box',
-                  backgroundColor: '#F9F9FA',
-                  color: '#5C5F6E'
+                  backgroundColor: isSaving ? '#E0E0E0' : '#F9F9FA',
+                  color: '#5C5F6E',
+                  cursor: isSaving ? 'not-allowed' : 'text'
                 }}
               />
             </div>
@@ -565,38 +716,39 @@ const AccountSettings: React.FC = () => {
                   overflow: 'hidden'
                 }}>
                   {profilePhoto ? (
-                    <img src={profilePhoto} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img 
+                      src={profilePhoto} 
+                      alt="Profile" 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={() => setProfilePhoto(null)}
+                    />
                   ) : (
                     <span style={{ fontSize: '48px', fontWeight: 500, color: '#fff' }}>
-                      {accountName.charAt(0)}
+                      {getInitial(accountName)}
                     </span>
                   )}
                 </div>
                 
                 <label style={{
                   padding: '8px 24px',
-                  backgroundColor: '#ECECFE',
+                  backgroundColor: isSaving ? '#C4C7CF' : '#ECECFE',
                   borderRadius: '8px',
-                  cursor: 'pointer',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                   fontSize: '15px',
                   fontWeight: 600,
-                  color: '#651FFF',
+                  color: isSaving ? '#888' : '#651FFF',
                   height: '35px',
                   display: 'flex',
                   alignItems: 'center',
-                  transition: 'opacity 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.8';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1';
+                  opacity: isSaving ? 0.6 : 1,
+                  pointerEvents: isSaving ? 'none' : 'auto'
                 }}>
-                  Загрузить фото
+                  {isSaving ? 'Загрузка...' : 'Загрузить фото'}
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handlePhotoUpload}
+                    disabled={isSaving}
                     style={{ display: 'none' }}
                   />
                 </label>
@@ -606,28 +758,23 @@ const AccountSettings: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'auto', flexShrink: 0 }}>
               <button 
                 type="submit" 
+                disabled={isSaving}
                 style={{
                   padding: '10px 24px',
-                  backgroundColor: '#651FFF',
+                  backgroundColor: isSaving ? '#C4C7CF' : '#651FFF',
                   color: '#fff',
                   border: 'none',
                   borderRadius: '8px',
                   fontSize: '15px',
                   fontWeight: 600,
-                  cursor: 'pointer',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
                   fontFamily: 'Rubik',
                   minWidth: '196px',
                   whiteSpace: 'nowrap',
-                  transition: 'opacity 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.opacity = '0.9';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.opacity = '1';
+                  opacity: isSaving ? 0.7 : 1
                 }}
               >
-                Сохранить изменения
+                {isSaving ? 'Сохранение...' : 'Сохранить изменения'}
               </button>
             </div>
           </form>

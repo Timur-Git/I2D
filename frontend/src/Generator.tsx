@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import uploadService, { UploadedFile } from './services/upload.service';
+import generationService, { GenerateRequest, GenerationResult } from './services/generation.service';
 
 const Generator: React.FC = () => {
   const navigate = useNavigate();
@@ -16,33 +18,69 @@ const Generator: React.FC = () => {
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [showSaveButton, setShowSaveButton] = useState<boolean>(true);
 
+  // Новые состояния для хранения загруженных файлов
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
   // Обработка загрузки нескольких фото
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const newPhotos: string[] = [];
-      Array.from(files).forEach(file => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          newPhotos.push(reader.result as string);
-          if (newPhotos.length === files.length) {
-            setUploadedPhotos(prev => [...prev, ...newPhotos]);
-            setCurrentPhotoIndex(0);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Конвертируем FileList в массив File
+      const filesArray = Array.from(files);
+      
+      // Загружаем все фото на сервер
+      const uploaded = await uploadService.uploadMultiplePhotos(filesArray);
+      
+      // Добавляем загруженные файлы в состояние
+      setUploadedFiles(prev => [...prev, ...uploaded]);
+      
+      // Создаем preview для отображения (используем URL с сервера или base64)
+      const previews = uploaded.map(file => file.url);
+      setUploadedPhotos(prev => [...prev, ...previews]);
+      
+      setCurrentPhotoIndex(0);
+      setUploadProgress(100);
+      
+    } catch (err) {
+      console.error('Upload failed:', err);
+    } finally {
+      setIsUploading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
   // Удаление фото
-  const removePhoto = (indexToRemove: number, e: React.MouseEvent) => {
+  const removePhoto = async (indexToRemove: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setUploadedPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
-    if (currentPhotoIndex >= uploadedPhotos.length - 1 && currentPhotoIndex > 0) {
-      setCurrentPhotoIndex(currentPhotoIndex - 1);
+
+    const fileToRemove = uploadedFiles[indexToRemove];
+
+    try {
+      // Удаляем с сервера если файл был загружен
+      if (fileToRemove?.id) {
+        await uploadService.deleteFile(fileToRemove.id);
+      }
+
+      // Удаляем из состояний
+      setUploadedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+      setUploadedPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
+
+      if (currentPhotoIndex >= uploadedPhotos.length - 1 && currentPhotoIndex > 0) {
+        setCurrentPhotoIndex(currentPhotoIndex - 1);
+      }
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('Не удалось удалить фото');
     }
   };
+
 
   // Следующее фото
   const nextPhoto = () => {
@@ -58,38 +96,43 @@ const Generator: React.FC = () => {
     }
   };
 
-  // Генерация описания на основе количества загруженных фото
-  const handleGenerate = () => {
-    if (uploadedPhotos.length === 0) {
+  // Обновленная генерация с отправкой photo_ids на backend
+  const handleGenerate = async () => {
+    if (uploadedFiles.length === 0) {
       alert('Сначала загрузите фото!');
       return;
     }
-    
+
     setIsLoading(true);
     setIsSaved(false);
     setShowSaveButton(true);
-    
-    setTimeout(() => {
-      // Разная генерация в зависимости от количества фото
-      const photoCount = uploadedPhotos.length;
-      let title = '';
-      let description = '';
-      
-      if (photoCount === 1) {
-        title = 'Эксклюзивный товар премиум-класса';
-        description = 'Перед вами уникальное изделие, созданное с особым вниманием к деталям. Каждая черта этого продукта продумана до мелочей, чтобы обеспечить максимальный комфорт и удовольствие от использования. Материалы высшего качества и инновационные технологии делают этот товар незаменимым в повседневной жизни. Прочный, надежный и стильный — он станет отличным выбором для тех, кто ценит качество и функциональность. Благодаря эргономичному дизайну и продуманной конструкции, использование этого продукта приносит только положительные эмоции. Не упустите возможность приобрести товар, который прослужит вам долгие годы и будет радовать каждый день своим безупречным качеством и стильным внешним видом.';
-      } else if (photoCount === 2) {
-        title = 'Комплект из 2 товаров для полного комфорта';
-        description = 'Представляем вашему вниманию комплект из двух взаимодополняющих товаров. Первый продукт (на первом фото) отличается своей универсальностью и практичностью. Он создан для ежедневного использования и способен выдерживать интенсивные нагрузки. Второй продукт (на втором фото) — это идеальное дополнение, которое усиливает функциональность основного изделия. Вместе они образуют гармоничный набор, позволяющий решать широкий спектр задач. Высокое качество материалов, современный дизайн и продуманная эргономика делают этот комплект незаменимым помощником в быту и на работе. Приобретая этот набор, вы получаете два отличных продукта по выгодной цене. Каждый из них прошел строгий контроль качества и соответствует всем современным стандартам. Наслаждайтесь удобством и практичностью в одном флаконе!';
-      } else {
-        title = `Набор из ${photoCount} товаров для любых задач`;
-        description = `В этом универсальном наборе собраны все необходимые инструменты и аксессуары для комфортной жизни. Каждый из ${photoCount} товаров заслуживает отдельного внимания. Все предметы набора выполнены из износостойких материалов, устойчивых к механическим повреждениям и долговременной эксплуатации. Благодаря разнообразию функций и продуманной комплектации, вы всегда будете готовы к любым жизненным ситуациям. Компактная упаковка позволяет удобно хранить все элементы набора, не занимая лишнего места. Качественная сборка и надежные механизмы гарантируют долгий срок службы. Этот набор станет отличным подарком для себя или близких. Оцените преимущество покупки всего комплекта по специальной цене — вы экономите время и деньги, получая максимум полезных вещей в одном месте. Доверьтесь нашему качеству и наслаждайтесь результатом!`;
-      }
-      
-      setGeneratedTitle(title);
-      setGeneratedDescription(description);
+
+    try {
+      // Извлекаем ID загруженных фото
+      const photoIds = uploadedFiles.map(file => file.id);
+
+      const request: GenerateRequest = {
+        upload_ids: photoIds,
+        config: {
+          language: 'ru',
+          tone: 'formal'
+        }
+      };
+
+      console.log('Sending generation request:', request);
+
+      const result: GenerationResult = await generationService.generate(request);
+
+      setGeneratedTitle(result.title);
+      setGeneratedDescription(result.description);
+
+    } catch (err: any) {
+      console.error('Generation failed:', err);
+      const errorMessage = err.response?.data?.message || 'Не удалось сгенерировать описание';
+      alert(`Ошибка генерации: ${errorMessage}`);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const downloadFile = (format: 'json' | 'txt' | 'docx') => {
@@ -302,9 +345,25 @@ const Generator: React.FC = () => {
     alert('Редактирование текста');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+  if (!generatedTitle || !generatedDescription) return;
+  
+  try {
+    const photoIds = uploadedFiles.map(file => file.id);
+    
+    await generationService.saveToHistory({
+      image_url: `gen_${Date.now()}`,
+      title: generatedTitle,
+      description: generatedDescription
+    });
+    
     setShowSaveButton(false);
-  };
+    alert('Описание сохранено в историю!');
+  } catch (err) {
+    console.error('Save to history failed:', err);
+    alert('Не удалось сохранить в историю');
+  }
+};
 
   const handleDone = () => {
     setIsSaved(true);

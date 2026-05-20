@@ -1,25 +1,31 @@
 import api from './api';
 
 export interface GenerateRequest {
-  photo_ids: string[];
-  product_type?: string;
-  additional_info?: string;
+  upload_ids: string[];
+  config?: {
+    language?: 'en' | 'ru';
+    tone?: 'formal' | 'casual';
+    max_length?: number;
+  };
 }
 
 export interface GenerationResult {
   id: string;
   title: string;
   description: string;
-  photo_ids: string[];
+  image_url: string;
   created_at: string;
   modified_at: string | null;
+  is_edited?: boolean;
+  user_id?: string;
 }
 
 interface HistoryResponse {
-  items: GenerationResult[];
+  data: GenerationResult[];
   total: number;
   page: number;
-  pages: number;
+  limit: number;
+  total_pages: number;
 }
 
 class GenerationService {
@@ -28,14 +34,28 @@ class GenerationService {
     return response.data;
   }
 
-  async saveToHistory(result: Omit<GenerationResult, 'modified_at'>): Promise<void> {
-    await api.post('/history', result);
+  async saveToHistory(result: { 
+    image_url: string;
+    title: string; 
+    description: string; 
+  }): Promise<GenerationResult> {
+    const response = await api.post('/history', result);
+    return response.data;
   }
 
-  async getHistory(page: number = 1, limit: number = 10): Promise<HistoryResponse> {
-    const response = await api.get('/history', {
-      params: { page, limit }
-    });
+  async getHistory(
+    page: number = 1, 
+    limit: number = 20,
+    search_query?: string,
+    selected_date?: string,
+    sort_by_date?: 'asc' | 'desc'
+  ): Promise<HistoryResponse> {
+    const params: any = { page, limit };
+    if (search_query) params.search_query = search_query;
+    if (selected_date) params.selected_date = selected_date;
+    if (sort_by_date) params.sort_by_date = sort_by_date;
+    
+    const response = await api.get('/history', { params });
     return response.data;
   }
 
@@ -48,8 +68,9 @@ class GenerationService {
     await api.delete(`/history/${id}`);
   }
 
-  async clearHistory(): Promise<void> {
-    await api.delete('/history/clear');
+  async clearHistory(): Promise<{ message: string }> {
+    const response = await api.delete('/history/clear');
+    return response.data;
   }
 }
 

@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import HistoryDetail from './HistoryDetail';
+import generationService, { GenerationResult } from './services/generation.service';
 
 const GenerationHistory: React.FC = () => {
   const navigate = useNavigate();
-  const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<GenerationResult | null>(null);
 
   // Данные для поиска и фильтрации
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,184 +17,47 @@ const GenerationHistory: React.FC = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const itemsPerPage = 8;
 
-  // Данные истории генераций с множественными изображениями
-  interface HistoryItem {
-    id: number;
-    title: string;
-    createdAt: string;
-    modifiedAt: string | null;
-    description: string;
-    imageUrls: string[];
-  }
+  // Состояния для данных с сервера
+  const [historyItems, setHistoryItems] = useState<GenerationResult[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const [historyItems] = useState<HistoryItem[]>([
-    { 
-      id: 1, 
-      title: 'Lorem ipsum', 
-      createdAt: '09.12.2013', 
-      modifiedAt: '15.07.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop1_1/400/200',
-        'https://picsum.photos/seed/laptop1_2/400/200',
-        'https://picsum.photos/seed/laptop1_3/400/200'
-      ] 
-    },
-    { 
-      id: 2, 
-      title: 'Lorem ipsum', 
-      createdAt: '09.12.2013', 
-      modifiedAt: '15.02.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop2_1/400/200',
-        'https://picsum.photos/seed/laptop2_2/400/200'
-      ] 
-    },
-    { 
-      id: 3, 
-      title: 'Lorem ipsum', 
-      createdAt: '09.12.2013', 
-      modifiedAt: null, 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop3_1/400/200'
-      ] 
-    },
-    { 
-      id: 4, 
-      title: 'Lorem ipsum', 
-      createdAt: '10.01.2014', 
-      modifiedAt: '20.03.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop4_1/400/200',
-        'https://picsum.photos/seed/laptop4_2/400/200',
-        'https://picsum.photos/seed/laptop4_3/400/200',
-        'https://picsum.photos/seed/laptop4_4/400/200'
-      ] 
-    },
-    { 
-      id: 5, 
-      title: 'Lorem ipsum', 
-      createdAt: '15.02.2014', 
-      modifiedAt: '01.04.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop5_1/400/200',
-        'https://picsum.photos/seed/laptop5_2/400/200'
-      ] 
-    },
-    { 
-      id: 6, 
-      title: 'Lorem ipsum', 
-      createdAt: '20.03.2014', 
-      modifiedAt: '10.05.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop6_1/400/200'
-      ] 
-    },
-    { 
-      id: 7, 
-      title: 'Lorem ipsum', 
-      createdAt: '05.04.2014', 
-      modifiedAt: null, 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop7_1/400/200',
-        'https://picsum.photos/seed/laptop7_2/400/200',
-        'https://picsum.photos/seed/laptop7_3/400/200'
-      ] 
-    },
-    { 
-      id: 8, 
-      title: 'Lorem ipsum', 
-      createdAt: '12.05.2014', 
-      modifiedAt: '18.06.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop8_1/400/200'
-      ] 
-    },
-    { 
-      id: 9, 
-      title: 'Lorem ipsum', 
-      createdAt: '18.06.2014', 
-      modifiedAt: '22.07.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop9_1/400/200',
-        'https://picsum.photos/seed/laptop9_2/400/200'
-      ] 
-    },
-    { 
-      id: 10, 
-      title: 'Lorem ipsum', 
-      createdAt: '25.07.2014', 
-      modifiedAt: '30.08.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop10_1/400/200',
-        'https://picsum.photos/seed/laptop10_2/400/200',
-        'https://picsum.photos/seed/laptop10_3/400/200'
-      ] 
-    },
-    { 
-      id: 11, 
-      title: 'Lorem ipsum', 
-      createdAt: '03.08.2014', 
-      modifiedAt: '05.09.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop11_1/400/200'
-      ] 
-    },
-    { 
-      id: 12, 
-      title: 'Lorem ipsum', 
-      createdAt: '10.09.2014', 
-      modifiedAt: null, 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop12_1/400/200',
-        'https://picsum.photos/seed/laptop12_2/400/200'
-      ] 
-    },
-    { 
-      id: 13, 
-      title: 'Lorem ipsum', 
-      createdAt: '15.10.2014', 
-      modifiedAt: '20.11.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop13_1/400/200',
-        'https://picsum.photos/seed/laptop13_2/400/200',
-        'https://picsum.photos/seed/laptop13_3/400/200',
-        'https://picsum.photos/seed/laptop13_4/400/200'
-      ] 
-    },
-    { 
-      id: 14, 
-      title: 'Lorem ipsum', 
-      createdAt: '22.11.2014', 
-      modifiedAt: '25.12.2027', 
-      description: 'Lorem ipsum dolor sit amet consectetur. Et sollicitudin scelerisque enim at donec purus varius sed. Amet arcu nec arcu eu laoreet lorem proin eu. Sit suspendisse proin tempor molestie mauris aliquet aenean nam egestas. Faucibus nunc semper venenatis tellus ante in at. Hendrerit potenti tincidunt lacus dis enim ipsum.', 
-      imageUrls: [
-        'https://picsum.photos/seed/laptop14_1/400/200'
-      ] 
-    },
-  ]);
+  // Функция загрузки истории
+  const loadHistory = async (page: number = 1) => {
+    try {
+      setIsLoadingHistory(true);
+      setHistoryError(null);
+      
+      const sort_by_date = sortByDate === 'newest' ? 'desc' : 'asc';
+      
+      const response = await generationService.getHistory(
+        page, 
+        itemsPerPage,
+        searchQuery || undefined,
+        selectedDate || undefined,
+        sort_by_date
+      );
 
-  const openDetail = (item: HistoryItem) => {
-    setSelectedItem(item);
+      setHistoryItems(response.data);  // ИЗМЕНЕНО: response.data вместо response.items
+      setTotalPages(response.total_pages);  // ИЗМЕНЕНО
+      setTotalItems(response.total);
+      
+    } catch (err) {
+      console.error('Failed to load history:', err);
+      setHistoryError('Не удалось загрузить историю');
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
-  const closeDetail = () => {
-    setSelectedItem(null);
-  };
+  // Загружаем при монтировании и при смене страницы
+  useEffect(() => {
+    loadHistory(currentPage);
+  }, [currentPage, sortByDate]);
 
-  // Фильтрация и сортировка
+  // Фильтрация и сортировка (клиентская, если нужно)
   const getFilteredAndSortedItems = () => {
     let filtered = [...historyItems];
 
@@ -205,30 +69,34 @@ const GenerationHistory: React.FC = () => {
 
     if (selectedDate) {
       filtered = filtered.filter(item => {
-        const itemDate = item.createdAt.split('.').reverse().join('-');
+        const itemDate = item.created_at.split('T')[0];
         return itemDate === selectedDate;
       });
     }
 
     if (sortByDate === 'newest') {
-      filtered.sort((a, b) => new Date(b.createdAt.split('.').reverse().join('-')).getTime() - new Date(a.createdAt.split('.').reverse().join('-')).getTime());
+      filtered.sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
     } else {
-      filtered.sort((a, b) => new Date(a.createdAt.split('.').reverse().join('-')).getTime() - new Date(b.createdAt.split('.').reverse().join('-')).getTime());
+      filtered.sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
     }
 
     if (sortByModified === 'recent') {
       filtered.sort((a, b) => {
-        if (!a.modifiedAt && !b.modifiedAt) return 0;
-        if (!a.modifiedAt) return 1;
-        if (!b.modifiedAt) return -1;
-        return new Date(b.modifiedAt.split('.').reverse().join('-')).getTime() - new Date(a.modifiedAt.split('.').reverse().join('-')).getTime();
+        if (!a.modified_at && !b.modified_at) return 0;
+        if (!a.modified_at) return 1;
+        if (!b.modified_at) return -1;
+        return new Date(b.modified_at).getTime() - new Date(a.modified_at).getTime();
       });
     } else {
       filtered.sort((a, b) => {
-        if (!a.modifiedAt && !b.modifiedAt) return 0;
-        if (!a.modifiedAt) return 1;
-        if (!b.modifiedAt) return -1;
-        return new Date(a.modifiedAt.split('.').reverse().join('-')).getTime() - new Date(b.modifiedAt.split('.').reverse().join('-')).getTime();
+        if (!a.modified_at && !b.modified_at) return 0;
+        if (!a.modified_at) return 1;
+        if (!b.modified_at) return -1;
+        return new Date(a.modified_at).getTime() - new Date(b.modified_at).getTime();
       });
     }
 
@@ -242,29 +110,56 @@ const GenerationHistory: React.FC = () => {
   };
 
   const filteredItems = getFilteredAndSortedItems();
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
   const paginatedItems = filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     if (window.confirm('Вы уверены, что хотите очистить всю историю генераций? Это действие нельзя отменить.')) {
-      alert('История очищена!');
+      try {
+        await generationService.clearHistory();
+        setHistoryItems([]);
+        setTotalPages(0);
+        setTotalItems(0);
+        alert('История очищена!');
+      } catch (err) {
+        console.error('Clear history failed:', err);
+        alert('Не удалось очистить историю');
+      }
     }
   };
 
-  const handleDeleteItem = (id: number, title: string, e: React.MouseEvent) => {
+  const handleDeleteItem = async (id: string, title: string, e: React.MouseEvent) => {  // id is string
     e.stopPropagation();
     if (window.confirm(`Удалить "${title}" из истории?`)) {
-      alert(`"${title}" удален!`);
+      try {
+        await generationService.deleteHistoryItem(id);
+        setHistoryItems(prev => prev.filter(item => item.id !== id));
+        alert(`"${title}" удален!`);
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Не удалось удалить запись');
+      }
     }
   };
 
+  const openDetail = (item: GenerationResult) => {
+    setSelectedItem(item);
+  };
+
+  const closeDetail = () => {
+    setSelectedItem(null);
+  };
+
+  // Форматирование даты для отображения (из ISO в DD.MM.YYYY)
   const formatDateForDisplay = (dateStr: string) => {
-    if (!dateStr) return 'Дата';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}.${parts[1]}.${parts[0]}`;
-    }
-    return dateStr;
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+  };
+
+  const formatDateForInput = (dateStr: string) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
   };
 
   // Иконки
@@ -902,196 +797,238 @@ const GenerationHistory: React.FC = () => {
         boxSizing: 'border-box',
         overflowY: 'auto'
       }}>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: '20px',
-          marginBottom: '32px'
-        }}>
-          {paginatedItems.map((item) => (
-            <div
-              key={item.id}
-              onClick={() => openDetail(item)}
-              style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: '12px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-                overflow: 'hidden',
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-                cursor: 'pointer',
-                border: '1px solid #F3F4F6'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
-              }}
-            >
+        {isLoadingHistory ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+            <div style={{ textAlign: 'center' }}>
               <div style={{
-                width: '100%',
-                height: '140px',
-                background: `url(${item.imageUrls[0]}) center/cover`,
-                backgroundColor: '#E5E7EB',
-                position: 'relative'
-              }}>
-                {item.imageUrls.length > 1 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '8px',
-                    right: '8px',
-                    background: 'rgba(0,0,0,0.6)',
-                    borderRadius: '12px',
-                    padding: '2px 8px',
-                    fontSize: '11px',
-                    color: '#fff',
-                    fontFamily: 'Rubik'
-                  }}>
-                    +{item.imageUrls.length - 1}
-                  </div>
-                )}
-              </div>
-              
-              <div style={{
-                padding: '16px',
-                position: 'relative'
-              }}>
-                <div style={{
-                  fontFamily: 'Rubik',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  lineHeight: '1.4',
-                  color: '#1F2937',
-                  marginBottom: '8px',
-                  wordBreak: 'break-word'
-                }}>
-                  {item.title}
-                </div>
-                
-                <div style={{
-                  fontFamily: 'Rubik',
-                  fontWeight: 400,
-                  fontSize: '12px',
-                  lineHeight: '1.5',
-                  color: '#6B7280',
-                  height: '54px',
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: 'vertical'
-                }}>
-                  {item.description}
-                </div>
-
-                <div style={{
-                  marginTop: '12px',
-                  paddingTop: '12px',
-                  borderTop: '1px solid #F3F4F6'
-                }}>
-                  <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>
-                    Дата создания: {item.createdAt}
-                  </div>
-                  {item.modifiedAt && (
-                    <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '8px' }}>
-                      Дата изменения: {item.modifiedAt}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginTop: '8px'
-                }}>
-                  <span style={{
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: '#651FFF',
-                    fontFamily: 'Rubik'
-                  }}>
-                    Подробнее
-                  </span>
-                  <button
-                    onClick={(e) => handleDeleteItem(item.id, item.title, e)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '4px',
-                      transition: 'background-color 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <TrashIcon />
-                  </button>
-                </div>
-              </div>
+                width: '40px',
+                height: '40px',
+                border: '4px solid #E5E7EB',
+                borderTop: '4px solid #651FFF',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                margin: '0 auto 16px'
+              }} />
+              <div style={{ fontFamily: 'Rubik', color: '#6B7280' }}>Загрузка истории...</div>
             </div>
-          ))}
-        </div>
-
-        {totalPages > 1 && (
+          </div>
+        ) : historyError ? (
           <div style={{
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
-            marginTop: '32px'
+            alignItems: 'center',
+            height: '100%',
+            color: '#DC2626',
+            textAlign: 'center'
           }}>
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                cursor: currentPage === 1 ? 'default' : 'pointer', 
-                padding: '8px',
-                opacity: currentPage === 1 ? 0.4 : 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <ChevronLeftIcon />
-            </button>
-            
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontFamily: 'Rubik',
-              fontSize: '14px',
-              color: '#1F2937'
-            }}>
-              <span style={{ fontWeight: 600 }}>{currentPage}</span>
-              <span style={{ color: '#6B7280' }}>из {totalPages}</span>
+            <div>
+              <div style={{ marginBottom: '16px' }}>{historyError}</div>
+              <button 
+                onClick={() => loadHistory(currentPage)}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#651FFF',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontFamily: 'Rubik'
+                }}
+              >
+                Повторить
+              </button>
             </div>
-            
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              style={{ 
-                background: 'transparent', 
-                border: 'none', 
-                cursor: currentPage === totalPages ? 'default' : 'pointer', 
-                padding: '8px',
-                opacity: currentPage === totalPages ? 0.4 : 1,
+          </div>
+        ) : paginatedItems.length === 0 ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100%',
+            color: '#9CA3AF',
+            fontFamily: 'Rubik'
+          }}>
+            История пуста. Сгенерируйте первое описание!
+          </div>
+        ) : (
+          <>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gap: '20px',
+              marginBottom: '32px'
+            }}>
+              {paginatedItems.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => openDetail(item)}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+                    overflow: 'hidden',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                    cursor: 'pointer',
+                    border: '1px solid #F3F4F6'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.12)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+                  }}
+                >
+                  <div style={{
+                    width: '100%',
+                    height: '140px',
+                    background: `url(${item.image_url}) center/cover`,
+                    backgroundColor: '#E5E7EB',
+                    position: 'relative'
+                  }}>
+                  </div>
+                  
+                  <div style={{
+                    padding: '16px',
+                    position: 'relative'
+                  }}>
+                    <div style={{
+                      fontFamily: 'Rubik',
+                      fontWeight: 600,
+                      fontSize: '14px',
+                      lineHeight: '1.4',
+                      color: '#1F2937',
+                      marginBottom: '8px',
+                      wordBreak: 'break-word'
+                    }}>
+                      {item.title}
+                    </div>
+                    
+                    <div style={{
+                      fontFamily: 'Rubik',
+                      fontWeight: 400,
+                      fontSize: '12px',
+                      lineHeight: '1.5',
+                      color: '#6B7280',
+                      height: '54px',
+                      overflow: 'hidden',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {item.description}
+                    </div>
+
+                    <div style={{
+                      marginTop: '12px',
+                      paddingTop: '12px',
+                      borderTop: '1px solid #F3F4F6'
+                    }}>
+                      <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>
+                        Дата создания: {formatDateForDisplay(item.created_at)}  {/* ИЗМЕНЕНО */}
+                      </div>
+                      {item.modified_at && (  // ИЗМЕНЕНО
+                        <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '8px' }}>
+                          Дата изменения: {formatDateForDisplay(item.modified_at)}  {/* ИЗМЕНЕНО */}
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginTop: '8px'
+                    }}>
+                      <span style={{
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        color: '#651FFF',
+                        fontFamily: 'Rubik'
+                      }}>
+                        Подробнее
+                      </span>
+                      <button
+                        onClick={(e) => handleDeleteItem(item.id, item.title, e)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '4px',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {totalPages > 1 && (
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <ChevronRightPaginationIcon />
-            </button>
-          </div>
+                justifyContent: 'center',
+                gap: '12px',
+                marginTop: '32px'
+              }}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  style={{ 
+                    background: 'transparent', 
+                    border: 'none', 
+                    cursor: currentPage === 1 ? 'default' : 'pointer', 
+                    padding: '8px',
+                    opacity: currentPage === 1 ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <ChevronLeftIcon />
+                </button>
+                
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'Rubik',
+                  fontSize: '14px',
+                  color: '#1F2937' 
+                }}>
+                  <span style={{ fontWeight: 600 }}>{currentPage}</span>
+                  <span style={{ color: '#6B7280' }}>из {totalPages}</span>
+                </div>
+                
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ 
+                    background: 'transparent', 
+                    border: 'none', 
+                    cursor: currentPage === totalPages ? 'default' : 'pointer', 
+                    padding: '8px',
+                    opacity: currentPage === totalPages ? 0.4 : 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <ChevronRightPaginationIcon />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
