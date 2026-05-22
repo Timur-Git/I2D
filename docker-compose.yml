@@ -45,7 +45,7 @@ services:
   # ML Service
   ml:
     build:
-      context: ./ml-sevice
+      context: ./ml-service
       dockerfile: Dockerfile
     container_name: i2d-ml
     environment:
@@ -66,7 +66,7 @@ services:
       - "8001:8001"
     volumes:
       - yolo_models:/root/.cache/ultralytics
-      - ./ml-sevice/yolov8n.pt:/app/yolov8n.pt:ro
+      - ./ml-service/yolov8n.pt:/app/yolov8n.pt:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
