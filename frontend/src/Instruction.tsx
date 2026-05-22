@@ -11,13 +11,13 @@ const Instruction: React.FC = () => {
     {
       number: "01",
       title: "Создайте аккаунт",
-      description: "Когда вы создаете учетную запись i2D, мы запрашиваем некоторую персональную информацию. Регистрируясь, вы даёте нам право на обработку ваших персональных данных.",
+      description: "Для использования сервиса необходимо создать аккаунт. Это бесплатно и займет всего минуту. Регистрация дает вам доступ к истории генераций, возможность сохранять результаты и использовать все функции сервиса.",
       instructions: [
-        "Нажмите кнопку \"Создать аккаунт\" в шапке.",
+        "Нажмите кнопку \"Создать аккаунт\" в шапке сайта.",
         "Введите свой адрес электронной почты.",
-        "В поле \"Имя аккаунта\" введите свое имя.",
-        "Введите и подтвердите свой пароль.",
-        "Нажмите \"Создать аккаунт\"."
+        "В поле \"Имя аккаунта\" введите ваше уникальное имя.",
+        "Придумайте и подтвердите надежный пароль (минимум 6 символов).",
+        "Нажмите \"Создать аккаунт\" и войдите в систему."
       ],
       buttonText: "Создать аккаунт",
       buttonLink: "/register"
@@ -25,29 +25,28 @@ const Instruction: React.FC = () => {
     {
       number: "02",
       title: "Загрузите свою фотографию",
-      description: "Lorem ipsum dolor sit amet consectetur. Venenatis turpis neque nec purus faucibus aliquam scelerisque condimentum ac. Suscipit urna nibh amet fames urna quis fringilla congue. Facilisi leo quam justo senectus ultrices sed in dignissim maecenas. Amet mattis lorem gravida faucibus elit eu. In ac faucibus habitant elit. Scelerisque aliquam curabitur turpis nibh sed feugiat in vestibulum viverra. Sapien ac tortor arcu in feugiat lacus adipiscing.",
+      description: "Загрузите одно или несколько фото вашего товара. Система поддерживает большинство популярных форматов изображений (JPEG, PNG, WEBP). Чем качественнее фото, тем точнее будет сгенерировано описание.",
       buttonText: "Загрузить фото",
-      buttonLink: "#"
+      buttonLink: "/generator"
     },
     {
       number: "03",
       title: "Нажмите на кнопку сгенерировать",
-      description: "Lorem ipsum dolor sit amet consectetur. Donec donec vitae consectetur adipiscing senectus gravida. Hac nisl blandit arcu diam pretium orci nisi id volutpat. Sit placerat dolor eget leo tellus quis congue tellus diam. Eu arcu pharetra fringilla elit convallis odio. Tempor enim commodo fringilla aliquet eget. Velit amet non aliquam a. Odio consequat sed diam consectetur netus.",
-      buttonText: "GENERATE",
-      buttonLink: "#"
+      description: "После загрузки фото нажмите кнопку 'Сгенерировать'. Наша нейросеть проанализирует изображение и создаст уникальный заголовок и описание, оптимально подходящие для вашего товара.",
+      buttonText: "Начать генерацию",
+      buttonLink: "/generator"
     },
     {
       number: "04",
       title: "Получите готовый результат",
-      description: "Lorem ipsum dolor sit amet consectetur. Ac interdum eget suspendisse ut in molestie luctus. Egestas vitae morbi lobortis sit sit commodo. Massa risus vitae lorem nulla tincidunt mauris diam aliquet. In ut et dictumst aenean proin. Vel vitae ipsum lacus neque eleifend. Purus non mi nibh nisl orci. Ut vitae purus tempus ultricies massa habitant.",
-      buttonText: "Ask to edit",
-      buttonLink: "#"
+      description: "Через несколько секунд вы увидите готовый результат. Вы можете скопировать текст в буфер обмена, отредактировать его, скачать в нужном формате (JSON, TXT, DOC) или сохранить в историю для дальнейшего использования.",
+      buttonText: "Сохранить результат",
+      buttonLink: "/generator"
     }
   ];
 
   return (
     <>
-      {/* Навигация (копия из App.tsx) */}
       <nav className="navbar">
         <div className="navbar-container">
           <div className="navbar-left">
@@ -70,20 +69,17 @@ const Instruction: React.FC = () => {
         </div>
       </nav>
 
-      {/* Основной контент страницы инструкции */}
       <div className="main-content" style={{ backgroundColor: '#f8f9ff' }}>
-        {/* Hero секция инструкции */}
         <header className="hero" style={{ paddingBottom: '40px' }}>
           <div className="container">
             <h1 className="hero-title">Узнайте, как использовать наш сервис шаг за шагом</h1>
             <p className="hero-description">
-              Lorem ipsum dolor sit amet consectetur. Eget dolor id non nisi tellus vel cras ultricies. Ornare nunc vitae interdum risus nulla auctor ultricies.
+              Следуйте этой простой инструкции, чтобы начать генерировать качественные описания для ваших товаров
             </p>
             <button onClick={() => navigate('/register')} className="button button-primary">Начать</button>
           </div>
         </header>
 
-        {/* Шаги инструкции */}
         <section className="how-it-works" style={{ paddingTop: '40px' }}>
           <div className="steps-container">
             {steps.map((step, index) => (
@@ -101,7 +97,6 @@ const Instruction: React.FC = () => {
                   {step.description}
                 </p>
 
-                {/* Список инструкций для первого шага */}
                 {step.instructions && (
                   <ul className="instruction-list" style={{ marginBottom: '32px', paddingLeft: '24px' }}>
                     {step.instructions.map((instruction, i) => (
@@ -112,15 +107,13 @@ const Instruction: React.FC = () => {
                   </ul>
                 )}
 
-                {/* Кнопка действия */}
                 <button 
                   onClick={() => navigate(step.buttonLink)} 
                   className="cta-button" 
                   style={{ 
                     padding: '12px 32px', 
                     fontSize: '16px',
-                    backgroundColor: step.buttonText === 'GENERATE' ? '#1a1a1a' : undefined,
-                    boxShadow: step.buttonText === 'GENERATE' ? 'none' : undefined
+                    backgroundColor: step.buttonText === 'Создать аккаунт' ? undefined : '#651FFF'
                   }}
                 >
                   {step.buttonText}
@@ -130,7 +123,6 @@ const Instruction: React.FC = () => {
           </div>
         </section>
 
-        {/* Секция CTA внизу */}
         <section className="cta" style={{ paddingTop: '40px' }}>
           <div className="cta-container">
             <div className="cta-content">
@@ -142,13 +134,14 @@ const Instruction: React.FC = () => {
         </section>
       </div>
 
-      {/* Футер (копия из App.tsx) */}
       <footer className="footer">
         <div className="footer-container">
           <div className="footer-left">
             <h3 className="footer-title">Что такое i2D?</h3>
             <p className="footer-description">
-              Lorem ipsum dolor sit amet consectetur. Tempus nisl praesent a eget vitae nunc pulvinar phasellus. Eleifend pulvinar suscipit accumsan at enim sed nulla nec. Amet semper nisl arcu in cursus nisl vel.
+              i2D - это сервис на базе искусственного интеллекта, который помогает продавцам на маркетплейсах 
+              создавать качественные описания товаров из фотографий. Экономьте время и повышайте продажи 
+              с помощью наших AI-алгоритмов.
             </p>
             <div className="footer-copyright">
               <p>© 2026 i2D.</p>

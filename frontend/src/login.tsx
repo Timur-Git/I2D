@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import authService from './services/auth.service';
 import './App.css';
@@ -9,13 +9,19 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const getCurrentPage = () => {
-    if (location.pathname === '/register') return 'register';
-    if (location.pathname === '/forgot-password') return 'forgot';
-    return 'login';
-  };
-
-  const [currentPage] = useState(getCurrentPage());
+  // Используем useEffect для отслеживания изменения пути
+  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'forgot'>('login');
+  
+  useEffect(() => {
+    if (location.pathname === '/register') {
+      setCurrentPage('register');
+    } else if (location.pathname === '/forgot-password') {
+      setCurrentPage('forgot');
+    } else {
+      setCurrentPage('login');
+    }
+  }, [location.pathname]);
+  
   const [email, setEmail] = useState('');
   const [accountName, setAccountName] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +50,12 @@ const Login = () => {
           password,
         });
         alert('Регистрация успешна! Пожалуйста, войдите.');
+        // Очищаем форму
+        setEmail('');
+        setAccountName('');
+        setPassword('');
+        setConfirmPassword('');
+        // Перенаправляем на страницу входа
         navigate('/login');
       } else if (currentPage === 'login') {
         await authService.login({
@@ -53,8 +65,12 @@ const Login = () => {
         alert('Вход выполнен!');
         navigate('/');
       } else {
+        // forgot password
         await authService.forgotPassword({ email });
         alert('Письмо для сброса пароля отправлено на email');
+        // Очищаем email
+        setEmail('');
+        // Перенаправляем на страницу входа
         navigate('/login');
       }
     } catch (err: any) {
@@ -65,9 +81,23 @@ const Login = () => {
     }
   };
 
+  // Переход на страницу забытого пароля
+  const handleForgotPasswordClick = () => {
+    navigate('/forgot-password');
+  };
+
+  // Переход на страницу входа
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
+  // Переход на страницу регистрации
+  const handleRegisterClick = () => {
+    navigate('/register');
+  };
+
   return (
     <div className="auth-layout">
-      {/* Левая часть с логотипом I2D */}
       <div className="auth-brand">
         <svg width="300" height="84" viewBox="0 0 300 84" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M49.0597 6.05727L98.1189 35.3049V54.7448L49.0597 84L0 54.7448V35.3051L49.0597 6.05727Z" fill="#A5B4FC"/>
@@ -79,7 +109,6 @@ const Login = () => {
         </svg>
       </div>
 
-      {/* Правая часть с формами */}
       <div className="auth-form-wrapper">
         {error && (
           <div className="error-message" style={{
@@ -94,7 +123,7 @@ const Login = () => {
           </div>
         )}
 
-        {/* Форма входа - по дизайну */}
+        {/* Форма входа */}
         {currentPage === 'login' && (
           <div className="auth-form">
             <h2 className="form-question">ВЫ, {accountName || 'nickname'}?</h2>
@@ -124,7 +153,7 @@ const Login = () => {
             </form>
 
             <div className="form-footer">
-              <button onClick={() => navigate('/forgot-password')} className="footer-link">
+              <button onClick={handleForgotPasswordClick} className="footer-link">
                 Забыли пароль?
               </button>
             </div>
@@ -184,14 +213,14 @@ const Login = () => {
             </form>
 
             <div className="form-footer">
-              <button onClick={() => navigate('/login')} className="footer-link">
+              <button onClick={handleLoginClick} className="footer-link">
                 Уже есть аккаунт? Войти
               </button>
             </div>
           </div>
         )}
 
-        {/* Форма восстановления пароля - по дизайну */}
+        {/* Форма восстановления пароля */}
         {currentPage === 'forgot' && (
           <div className="auth-form">
             <h2 className="form-question">Забыли пароль?</h2>
@@ -213,7 +242,7 @@ const Login = () => {
             </form>
 
             <div className="form-footer">
-              <button onClick={() => navigate('/login')} className="footer-link">
+              <button onClick={handleLoginClick} className="footer-link">
                 Вспомнили пароль? Войти.
               </button>
             </div>

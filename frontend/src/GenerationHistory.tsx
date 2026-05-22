@@ -2,10 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import HistoryDetail from './HistoryDetail';
 import generationService, { GenerationResult } from './services/generation.service';
+import authService from './services/auth.service';
 
 const GenerationHistory: React.FC = () => {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState<GenerationResult | null>(null);
+
+  // Состояния для данных пользователя
+  const [userAccountName, setUserAccountName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
 
   // Данные для поиска и фильтрации
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +30,24 @@ const GenerationHistory: React.FC = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Загрузка данных пользователя
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setUserAccountName(userData.account_name);
+      setUserEmail(userData.email);
+      if (userData.avatar_url) {
+        setUserAvatar(userData.avatar_url);
+      }
+    } catch (err) {
+      console.error('Failed to load user data:', err);
+    }
+  };
+
   // Функция загрузки истории
   const loadHistory = async (page: number = 1) => {
     try {
@@ -40,8 +64,8 @@ const GenerationHistory: React.FC = () => {
         sort_by_date
       );
 
-      setHistoryItems(response.data);  // ИЗМЕНЕНО: response.data вместо response.items
-      setTotalPages(response.total_pages);  // ИЗМЕНЕНО
+      setHistoryItems(response.data);
+      setTotalPages(response.total_pages);
       setTotalItems(response.total);
       
     } catch (err) {
@@ -127,7 +151,7 @@ const GenerationHistory: React.FC = () => {
     }
   };
 
-  const handleDeleteItem = async (id: string, title: string, e: React.MouseEvent) => {  // id is string
+  const handleDeleteItem = async (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (window.confirm(`Удалить "${title}" из истории?`)) {
       try {
@@ -156,10 +180,9 @@ const GenerationHistory: React.FC = () => {
     return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
   };
 
-  const formatDateForInput = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+  // Получаем первую букву имени для аватара
+  const getInitial = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
   };
 
   // Иконки
@@ -324,11 +347,21 @@ const GenerationHistory: React.FC = () => {
           overflow: 'hidden',
           cursor: 'pointer'
         }}>
-          <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>М</span>
+          {userAvatar ? (
+            <img 
+              src={userAvatar} 
+              alt="Profile" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>
+              {getInitial(userAccountName)}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Левое узкое меню (80px) */}
+      {/* Левое узкое меню (80px) - исправлено выравнивание */}
       <div style={{
         position: 'absolute',
         left: 0,
@@ -359,7 +392,9 @@ const GenerationHistory: React.FC = () => {
           justifyContent: 'center',
           borderRadius: '10px',
           textDecoration: 'none',
-          transition: 'background-color 0.2s ease'
+          transition: 'background-color 0.2s ease',
+          margin: 0,
+          padding: 0
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#ECECFE';
@@ -378,7 +413,9 @@ const GenerationHistory: React.FC = () => {
           justifyContent: 'center',
           borderRadius: '10px',
           backgroundColor: '#ECECFE',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          margin: 0,
+          padding: 0
         }}>
           <UserNavIcon color="#651FFF" />
         </div>
@@ -392,7 +429,8 @@ const GenerationHistory: React.FC = () => {
           borderRadius: '10px',
           textDecoration: 'none',
           transition: 'background-color 0.2s ease',
-          marginTop: '8px'
+          margin: 0,
+          padding: 0
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = '#ECECFE';
@@ -400,7 +438,7 @@ const GenerationHistory: React.FC = () => {
         onMouseLeave={(e) => {
           e.currentTarget.style.backgroundColor = 'transparent';
         }}>
-          <SettingsIcon />
+          <SettingsIcon size={20} color="#5C5F6E" />
         </Link>
       </div>
 
@@ -438,13 +476,21 @@ const GenerationHistory: React.FC = () => {
         }}>
           <div style={{
             width: '44px', height: '44px', borderRadius: '22px', backgroundColor: '#651FFF',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer'
           }}>
-            <span style={{ fontSize: '20px', fontWeight: 500, color: '#fff' }}>М</span>
+            {userAvatar ? (
+              <img 
+                src={userAvatar} 
+                alt="Profile" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : (
+              <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>{getInitial(userAccountName)}</span>
+            )}
           </div>
           <div>
-            <div style={{ fontSize: '16px', fontWeight: 500, color: '#1F2937', marginBottom: '4px' }}>MIKS</div>
-            <div style={{ fontSize: '12px', color: '#6B7280' }}>miks@gmail.com</div>
+            <div style={{ fontSize: '16px', fontWeight: 500, color: '#1F2937', marginBottom: '4px' }}>{userAccountName || 'Пользователь'}</div>
+            <div style={{ fontSize: '12px', color: '#6B7280' }}>{userEmail || 'email@example.com'}</div>
           </div>
         </div>
 
@@ -926,11 +972,11 @@ const GenerationHistory: React.FC = () => {
                       borderTop: '1px solid #F3F4F6'
                     }}>
                       <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '2px' }}>
-                        Дата создания: {formatDateForDisplay(item.created_at)}  {/* ИЗМЕНЕНО */}
+                        Дата создания: {formatDateForDisplay(item.created_at)}
                       </div>
-                      {item.modified_at && (  // ИЗМЕНЕНО
+                      {item.modified_at && (
                         <div style={{ fontSize: '11px', color: '#9CA3AF', marginBottom: '8px' }}>
-                          Дата изменения: {formatDateForDisplay(item.modified_at)}  {/* ИЗМЕНЕНО */}
+                          Дата изменения: {formatDateForDisplay(item.modified_at)}
                         </div>
                       )}
                     </div>
@@ -1031,6 +1077,13 @@ const GenerationHistory: React.FC = () => {
           </>
         )}
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

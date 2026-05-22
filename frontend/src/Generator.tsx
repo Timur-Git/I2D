@@ -1,10 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import uploadService, { UploadedFile } from './services/upload.service';
 import generationService, { GenerateRequest, GenerationResult } from './services/generation.service';
+import authService from './services/auth.service';
 
 const Generator: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Состояния для данных пользователя
+  const [userAccountName, setUserAccountName] = useState<string>('');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   
   // Множественные фото
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([]);
@@ -23,6 +29,29 @@ const Generator: React.FC = () => {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
+  // Загрузка данных пользователя
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const userData = await authService.getCurrentUser();
+      setUserAccountName(userData.account_name);
+      setUserEmail(userData.email);
+      if (userData.avatar_url) {
+        setUserAvatar(userData.avatar_url);
+      }
+    } catch (err) {
+      console.error('Failed to load user data:', err);
+    }
+  };
+
+  // Получаем первую букву имени для аватара
+  const getInitial = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : 'U';
+  };
+
   // Обработка загрузки нескольких фото
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -32,22 +61,13 @@ const Generator: React.FC = () => {
     setUploadProgress(0);
 
     try {
-      // Конвертируем FileList в массив File
       const filesArray = Array.from(files);
-      
-      // Загружаем все фото на сервер
       const uploaded = await uploadService.uploadMultiplePhotos(filesArray);
-      
-      // Добавляем загруженные файлы в состояние
       setUploadedFiles(prev => [...prev, ...uploaded]);
-      
-      // Создаем preview для отображения (используем URL с сервера или base64)
       const previews = uploaded.map(file => file.url);
       setUploadedPhotos(prev => [...prev, ...previews]);
-      
       setCurrentPhotoIndex(0);
       setUploadProgress(100);
-      
     } catch (err) {
       console.error('Upload failed:', err);
     } finally {
@@ -63,12 +83,9 @@ const Generator: React.FC = () => {
     const fileToRemove = uploadedFiles[indexToRemove];
 
     try {
-      // Удаляем с сервера если файл был загружен
       if (fileToRemove?.id) {
         await uploadService.deleteFile(fileToRemove.id);
       }
-
-      // Удаляем из состояний
       setUploadedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
       setUploadedPhotos(prev => prev.filter((_, index) => index !== indexToRemove));
 
@@ -80,7 +97,6 @@ const Generator: React.FC = () => {
       alert('Не удалось удалить фото');
     }
   };
-
 
   // Следующее фото
   const nextPhoto = () => {
@@ -108,9 +124,7 @@ const Generator: React.FC = () => {
     setShowSaveButton(true);
 
     try {
-      // Извлекаем ID загруженных фото
       const photoIds = uploadedFiles.map(file => file.id);
-
       const request: GenerateRequest = {
         upload_ids: photoIds,
         config: {
@@ -120,12 +134,9 @@ const Generator: React.FC = () => {
       };
 
       console.log('Sending generation request:', request);
-
       const result: GenerationResult = await generationService.generate(request);
-
       setGeneratedTitle(result.title);
       setGeneratedDescription(result.description);
-
     } catch (err: any) {
       console.error('Generation failed:', err);
       const errorMessage = err.response?.data?.message || 'Не удалось сгенерировать описание';
@@ -346,24 +357,24 @@ const Generator: React.FC = () => {
   };
 
   const handleSave = async () => {
-  if (!generatedTitle || !generatedDescription) return;
-  
-  try {
-    const photoIds = uploadedFiles.map(file => file.id);
+    if (!generatedTitle || !generatedDescription) return;
     
-    await generationService.saveToHistory({
-      image_url: `gen_${Date.now()}`,
-      title: generatedTitle,
-      description: generatedDescription
-    });
-    
-    setShowSaveButton(false);
-    alert('Описание сохранено в историю!');
-  } catch (err) {
-    console.error('Save to history failed:', err);
-    alert('Не удалось сохранить в историю');
-  }
-};
+    try {
+      const photoIds = uploadedFiles.map(file => file.id);
+      
+      await generationService.saveToHistory({
+        image_url: `gen_${Date.now()}`,
+        title: generatedTitle,
+        description: generatedDescription
+      });
+      
+      setShowSaveButton(false);
+      alert('Описание сохранено в историю!');
+    } catch (err) {
+      console.error('Save to history failed:', err);
+      alert('Не удалось сохранить в историю');
+    }
+  };
 
   const handleDone = () => {
     setIsSaved(true);
@@ -424,8 +435,28 @@ const Generator: React.FC = () => {
           <span style={{ fontFamily: 'Rubik', fontWeight: 500, fontSize: '16px', color: '#5C5F6E', cursor: 'default' }}>Главная</span>
           <span style={{ fontFamily: 'Rubik', fontWeight: 600, fontSize: '16px', color: '#651FFF', borderBottom: '2px solid #651FFF', paddingBottom: '4px' }}>Генератор</span>
         </div>
-        <div style={{ width: '44px', height: '44px', borderRadius: '22px', backgroundColor: '#651FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', cursor: 'pointer' }}>
-          <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>М</span>
+        <div style={{
+          width: '44px',
+          height: '44px',
+          borderRadius: '22px',
+          backgroundColor: '#651FFF',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          cursor: 'pointer'
+        }}>
+          {userAvatar ? (
+            <img 
+              src={userAvatar} 
+              alt="Profile" 
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <span style={{ fontSize: '18px', fontWeight: 500, color: '#fff' }}>
+              {getInitial(userAccountName)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -444,13 +475,55 @@ const Generator: React.FC = () => {
         zIndex: 20
       }}>
         <div style={{ width: '45px', height: '36px', marginBottom: '98px' }}><LogoIcon /></div>
-        <Link to="/generator" style={{ width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', backgroundColor: '#ECECFE', textDecoration: 'none' }}><HomeIcon color="#651FFF" /></Link>
-        <Link to="/account" style={{ width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', textDecoration: 'none', transition: 'background-color 0.2s ease' }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ECECFE'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}><UserIcon color="#5C5F6E" /></Link>
-        <Link to="/settings" style={{ width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px', textDecoration: 'none', transition: 'background-color 0.2s ease' }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ECECFE'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}><SettingsIcon size={20} color="#5C5F6E" /></Link>
+        
+        <Link to="/generator" style={{ 
+          width: '44px', 
+          height: '44px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          borderRadius: '10px', 
+          backgroundColor: '#ECECFE', 
+          textDecoration: 'none',
+          margin: 0,
+          padding: 0
+        }}>
+          <HomeIcon color="#651FFF" />
+        </Link>
+        
+        <Link to="/history" style={{ 
+          width: '44px', 
+          height: '44px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          borderRadius: '10px', 
+          textDecoration: 'none', 
+          transition: 'background-color 0.2s ease',
+          margin: 0,
+          padding: 0
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ECECFE'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+          <UserIcon color="#5C5F6E" />
+        </Link>
+        
+        <Link to="/settings" style={{ 
+          width: '44px', 
+          height: '44px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          borderRadius: '10px', 
+          textDecoration: 'none', 
+          transition: 'background-color 0.2s ease',
+          margin: 0,
+          padding: 0
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ECECFE'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}>
+          <SettingsIcon size={20} color="#5C5F6E" />
+        </Link>
       </div>
 
       <div style={{
@@ -496,7 +569,6 @@ const Generator: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* Навигация по фото */}
                 {uploadedPhotos.length > 1 && (
                   <>
                     <button
@@ -546,7 +618,6 @@ const Generator: React.FC = () => {
                   </>
                 )}
 
-                {/* Индикатор количества фото */}
                 <div style={{
                   position: 'absolute',
                   bottom: '16px',
@@ -562,7 +633,6 @@ const Generator: React.FC = () => {
                   {currentPhotoIndex + 1} / {uploadedPhotos.length}
                 </div>
 
-                {/* Кнопка удаления фото */}
                 <button
                   onClick={(e) => removePhoto(currentPhotoIndex, e)}
                   style={{
@@ -583,7 +653,6 @@ const Generator: React.FC = () => {
                   <CloseIcon />
                 </button>
 
-                {/* Кнопка добавления еще фото */}
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   style={{
@@ -611,7 +680,6 @@ const Generator: React.FC = () => {
               </>
             )}
 
-            {/* Скрытый input для загрузки нескольких фото */}
             <input
               ref={fileInputRef}
               type="file"
@@ -907,6 +975,13 @@ const Generator: React.FC = () => {
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };

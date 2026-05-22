@@ -22,39 +22,44 @@ const Logo: React.FC = () => (
   </svg>
 );
 
+// Компонент иконки галочки
+const CheckIcon: React.FC = () => (
+  <svg width="48" height="48" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 26 4 L 26 6 L 28 6 L 28 4 L 26 4 z M 28 6 L 28 10 L 30 10 L 30 6 L 28 6 z M 28 10 L 26 10 L 26 12 L 28 12 L 28 10 z M 26 12 L 24 12 L 24 14 L 26 14 L 26 12 z M 24 14 L 22 14 L 22 16 L 24 16 L 24 14 z M 22 16 L 20 16 L 20 18 L 22 18 L 22 16 z M 20 18 L 18 18 L 18 20 L 20 20 L 20 18 z M 18 20 L 16 20 L 16 22 L 18 22 L 18 20 z M 16 22 L 14 22 L 14 24 L 16 24 L 16 22 z M 14 24 L 12 24 L 12 26 L 14 26 L 14 24 z M 12 26 L 10 26 L 10 28 L 12 28 L 12 26 z M 10 26 L 10 24 L 8 24 L 8 26 L 10 26 z M 8 24 L 8 22 L 6 22 L 6 24 L 8 24 z M 6 22 L 6 20 L 4 20 L 4 22 L 6 22 z M 4 20 L 4 16 L 2 16 L 2 20 L 4 20 z M 4 16 L 6 16 L 6 14 L 4 14 L 4 16 z M 6 16 L 6 18 L 8 18 L 8 16 L 6 16 z M 8 18 L 8 20 L 10 20 L 10 18 L 8 18 z M 10 20 L 10 22 L 12 22 L 12 20 L 10 20 z M 12 20 L 14 20 L 14 18 L 12 18 L 12 20 z M 14 18 L 16 18 L 16 16 L 14 16 L 14 18 z M 16 16 L 18 16 L 18 14 L 16 14 L 16 16 z M 18 14 L 20 14 L 20 12 L 18 12 L 18 14 z M 20 12 L 22 12 L 22 10 L 20 10 L 20 12 z M 22 10 L 24 10 L 24 8 L 22 8 L 22 10 z M 24 8 L 26 8 L 26 6 L 24 6 L 24 8 z" fill="#651FFF"/>
+  </svg>
+);
+
 const App: React.FC = () => {
-  // Данные для плашек преимуществ
   const advantages = [
     {
-      title: "Lorem ipsum",
-      description: "Lorem ipsum dolor sit amet consectetur. Duis platea mi accumsan tristique cursus blandit lorem. Nec in sapien ipsum amet et."
+      title: "Быстрая генерация",
+      description: "ИИ анализирует ваше фото и создает уникальное описание товара всего за несколько секунд. Экономьте время на написание текстов."
     },
     {
-      title: "Lorem ipsum",
-      description: "Lorem ipsum dolor sit amet consectetur. Eu augue scelerisque arcu purus risus arcu nullam. Et fermentum bibendum quam semper ornare."
+      title: "SEO-оптимизация",
+      description: "Генерируем заголовки и описания, которые помогут вашему товару быть замеченным на маркетплейсах и в поисковых системах."
     },
     {
-      title: "Lorem ipsum",
-      description: "Lorem ipsum dolor sit amet consectetur. Dis pharetra tortor est aenean et duis pretium. Purus condimentum donec fames scelerisque nisi morbi egestas tempus at."
+      title: "Поддержка форматов",
+      description: "Скачивайте результаты в JSON, TXT или DOC форматах. Удобная интеграция с вашими рабочими процессами."
     }
   ];
 
-  // Данные для шагов "Как это работает"
   const steps = [
     {
       number: "01",
       title: "Создайте аккаунт",
-      description: "Создайте аккаунт, чтобы начать пользоваться нашим сервисом."
+      description: "Зарегистрируйтесь в сервисе, чтобы получить доступ к генератору и сохранять историю своих генераций."
     },
     {
       number: "02",
       title: "Загрузите фото товара",
-      description: "Загрузите фото вашего товара, затем нажмите кнопку сгенерировать и дождитесь результата."
+      description: "Загрузите одно или несколько фото вашего товара, затем нажмите кнопку сгенерировать и дождитесь результата."
     },
     {
       number: "03",
       title: "Получите готовый результат",
-      description: "После некоторого времени, вы получите готовый заголовок и описания для товара, которые вы можете использовать для маркетплейсов."
+      description: "Через несколько секунд вы получите готовый заголовок и описание для товара, которые вы можете использовать для маркетплейсов."
     }
   ];
 
@@ -98,7 +103,7 @@ const App: React.FC = () => {
             <div className="container">
               <h1 className="hero-title">Генератор для описания товаров</h1>
               <p className="hero-description">
-                i2D - это онлайн сервис, который позволит вам быстро сгенерировать название заголовки и описание к вашему товару по фото.
+                i2D - это онлайн сервис, который позволит вам быстро сгенерировать название и описание к вашему товару по фото.
               </p>
               <button onClick={() => navigate(isAuthenticated ? '/generator' : '/register')} className="button button-primary">
                 {isAuthenticated ? 'Начать генерацию' : 'Начать'}
@@ -110,13 +115,15 @@ const App: React.FC = () => {
             <div className="container">
               <h2 className="section-title">Наши преимущества</h2>
               <p className="section-subtitle">
-                Lorem ipsum dolor sit amet consectetur. Sit sagittis mauris a mauris tellus a vel. Integer magna iaculis ultricies vitae eu massa viverra viverra.
+                Используйте силу искусственного интеллекта для создания качественных описаний товаров
               </p>
               <div className="advantages-grid">
                 {advantages.map((item, index) => (
                   <div key={index} className="advantage-card">
                     <div className="advantage-icon">
-                      <div className="icon-circle"></div>
+                      <div className="icon-circle">
+                        <CheckIcon />
+                      </div>
                     </div>
                     <h3 className="advantage-title">{item.title}</h3>
                     <p className="advantage-description">{item.description}</p>
@@ -130,7 +137,7 @@ const App: React.FC = () => {
             <div className="steps-container">
               <h2 className="how-it-works-title">Как это работает?</h2>
               <p className="how-it-works-subtitle">
-                Lorem ipsum dolor sit amet consectetur. Curabitur faucibus adipiscing quis nulla leo senectus rhoncus ut. A porttitor rutrum elementum neque ante mauris.
+                Всего три простых шага, чтобы получить качественное описание для вашего товара
               </p>
               <div className="steps-wrapper">
                 {steps.map((step, index) => (
@@ -162,7 +169,9 @@ const App: React.FC = () => {
             <div className="footer-left">
               <h3 className="footer-title">Что такое i2D?</h3>
               <p className="footer-description">
-                Lorem ipsum dolor sit amet consectetur. Tempus nisl praesent a eget vitae nunc pulvinar phasellus. Eleifend pulvinar suscipit accumsan at enim sed nulla nec. Amet semper nisl arcu in cursus nisl vel.
+                i2D - это сервис на базе искусственного интеллекта, который помогает продавцам на маркетплейсах 
+                создавать качественные описания товаров из фотографий. Экономьте время и повышайте продажи 
+                с помощью наших AI-алгоритмов.
               </p>
               <div className="footer-copyright">
                 <p>© 2026 i2D.</p>
@@ -191,7 +200,7 @@ const App: React.FC = () => {
         <Route path="/forgot-password" element={<Login />} />
         <Route path="/instruction" element={<Instruction />} />
         
-        {/* Защищенные маршруты */}
+        {/* Защищенные маршруты - используем /history для истории */}
         <Route path="/settings" element={
           <ProtectedRoute>
             <AccountSettings />
@@ -202,6 +211,13 @@ const App: React.FC = () => {
             <Generator />
           </ProtectedRoute>
         } />
+        <Route path="/history" element={
+          <ProtectedRoute>
+            <GenerationHistory />
+          </ProtectedRoute>
+        } />
+        
+        {/* Перенаправляем /account на /history для обратной совместимости */}
         <Route path="/account" element={
           <ProtectedRoute>
             <GenerationHistory />
