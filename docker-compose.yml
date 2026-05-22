@@ -1,4 +1,7 @@
+version: '3.8'
+
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: i2d-postgres
@@ -15,7 +18,10 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - i2d-network
 
+  # MinIO Object Storage
   minio:
     image: minio/minio:latest
     container_name: i2d-minio
@@ -33,10 +39,14 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - i2d-network
 
+  # ML Service
   ml:
     build:
-      context: ./ml-sevice
+      context: ./ml-service
+      dockerfile: Dockerfile
     container_name: i2d-ml
     environment:
       APP_NAME: I2D ML Service
@@ -56,6 +66,7 @@ services:
       - "8001:8001"
     volumes:
       - yolo_models:/root/.cache/ultralytics
+      - ./ml-service/yolov8n.pt:/app/yolov8n.pt:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -63,12 +74,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+    depends_on:
+      - postgres
+      - minio
+    networks:
+      - i2d-network
 
+  # Backend Service
   backend:
     build:
       context: ./backend
+      dockerfile: Dockerfile
     container_name: i2d-backend
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       APP_NAME: I2D Backend
       DEBUG: "False"
@@ -107,8 +124,36 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - i2d-network
+
+  # Frontend Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: i2d-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - i2d-network
+
+networks:
+  i2d-network:
+    driver: bridge
 
 volumes:
   postgres_data:
   minio_data:
   yolo_models:
+
+# Первый запуск, с установкой всех контейнеров
+# docker-compose up --build
+
+# Обычный пуск, в фоновом режиме
+# docker-compose up -d
+
+# Обычный пуск
+# docker-compose up
