@@ -43,42 +43,42 @@ services:
       - i2d-network
 
   # ML Service
-  ml:
-    build:
-      context: ./ml-service
-      dockerfile: Dockerfile
-    container_name: i2d-ml
-    environment:
-      APP_NAME: I2D ML Service
-      DEBUG: "False"
-      API_V1_PREFIX: /api/v1
-      YOLO_MODEL_PATH: yolov8n.pt
-      YOLO_CONFIDENCE: "0.4"
-      YOLO_IOU: "0.5"
-      CROP_PADDING: "20"
-      LM_STUDIO_URL: http://host.docker.internal:1234/v1
-      LM_STUDIO_API_KEY: lm-studio
-      LM_STUDIO_MODEL: qwen/qwen3.5-9b
-      LLM_TEMPERATURE: "0.4"
-      LLM_TOP_P: "0.9"
-      LLM_MAX_TOKENS: "2000"
-    ports:
-      - "8001:8001"
-    volumes:
-      - yolo_models:/root/.cache/ultralytics
-      - ./ml-service/yolov8n.pt:/app/yolov8n.pt:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health').read()"]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-    depends_on:
-      - postgres
-      - minio
-    networks:
-      - i2d-network
+  # ml:
+  #   build:
+  #     context: ./ml-service
+  #     dockerfile: Dockerfile
+  #   container_name: i2d-ml
+  #   environment:
+  #     APP_NAME: I2D ML Service
+  #     DEBUG: "False"
+  #     API_V1_PREFIX: /api/v1
+  #     YOLO_MODEL_PATH: yolov8n.pt
+  #     YOLO_CONFIDENCE: "0.4"
+  #     YOLO_IOU: "0.5"
+  #     CROP_PADDING: "20"
+  #     LM_STUDIO_URL: http://host.docker.internal:1234/v1
+  #     LM_STUDIO_API_KEY: lm-studio
+  #     LM_STUDIO_MODEL: qwen/qwen3.5-9b
+  #     LLM_TEMPERATURE: "0.4"
+  #     LLM_TOP_P: "0.9"
+  #     LLM_MAX_TOKENS: "2000"
+  #   ports:
+  #     - "8001:8001"
+  #   volumes:
+  #     - yolo_models:/root/.cache/ultralytics
+  #     - ./ml-service/yolov8n.pt:/app/yolov8n.pt:ro
+  #   extra_hosts:
+  #     - "host.docker.internal:host-gateway"
+  #   healthcheck:
+  #     test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health').read()"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 12
+  #   depends_on:
+  #     - postgres
+  #     - minio
+  #   networks:
+  #     - i2d-network
 
   # Backend Service
   backend:
@@ -86,30 +86,31 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: i2d-backend
+    env_file: "backend/.env"
     environment:
-      APP_NAME: I2D Backend
-      DEBUG: "False"
-      API_V1_PREFIX: /api/v1
+      # APP_NAME: I2D Backend
+      # DEBUG: "False"
+      # API_V1_PREFIX: /api/v1
       DB_HOST: postgres
-      DB_PORT: "5432"
-      DB_NAME: i2d_db
-      DB_USER: postgres
-      DB_PASSWORD: postgres
+      # DB_PORT: "5432"
+      # DB_NAME: i2d_db
+      # DB_USER: postgres
+      # DB_PASSWORD: postgres
       MINIO_ENDPOINT: minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-      MINIO_BUCKET: uploads
-      MINIO_SECURE: "False"
+      # MINIO_ACCESS_KEY: minioadmin
+      # MINIO_SECRET_KEY: minioadmin
+      # MINIO_BUCKET: uploads
+      # MINIO_SECURE: "False"
       MINIO_PUBLIC_ENDPOINT: localhost:9000
-      SECRET_KEY: change-this-dev-compose-secret-key-at-least-32-chars
-      ALGORITHM: HS256
-      ACCESS_TOKEN_EXPIRE_MINUTES: "60"
-      REFRESH_TOKEN_EXPIRE_DAYS: "30"
-      ML_SERVICE_URL: http://ml:8001/api/v1/generate
-      ML_SERVICE_TIMEOUT_SECONDS: "180"
-      ALLOW_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
-      ALLOW_METHODS: "*"
-      ALLOW_HEADERS: "*"
+      # SECRET_KEY: change-this-dev-compose-secret-key-at-least-32-chars
+      # ALGORITHM: HS256
+      # ACCESS_TOKEN_EXPIRE_MINUTES: "60"
+      # REFRESH_TOKEN_EXPIRE_DAYS: "30"
+      ML_SERVICE_URL: http://host.docker.internal:8001/api/v1/generate
+      # ML_SERVICE_TIMEOUT_SECONDS: "180"
+      # ALLOW_ORIGINS: ["http://localhost:3000","http://127.0.0.1:3000"]
+      # ALLOW_METHODS: ["*"]
+      # ALLOW_HEADERS: ["*"]
     ports:
       - "8000:8000"
     depends_on:
@@ -117,8 +118,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      ml:
-        condition: service_healthy
+      # ml:
+      #   condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health').read()"]
       interval: 10s
@@ -134,7 +135,7 @@ services:
       dockerfile: Dockerfile
     container_name: i2d-frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
       - backend
     networks:
@@ -147,7 +148,7 @@ networks:
 volumes:
   postgres_data:
   minio_data:
-  yolo_models:
+  # yolo_models:
 
 # Первый запуск, с установкой всех контейнеров
 # docker-compose up --build

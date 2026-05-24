@@ -1,12 +1,12 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /
 
 # Копируем package файлы
-COPY package*.json ./
+COPY package.json ./
 
 # Устанавливаем зависимости
-RUN npm ci
+RUN npm install
 
 # Копируем исходный код
 COPY . .
