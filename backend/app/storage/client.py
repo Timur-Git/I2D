@@ -82,6 +82,32 @@ class MinioClient:
             return True
         except ClientError:
             return False
+    
+    async def get_presigned_url(self, file_reference: str, expires: int = 3600) -> str:
+        """
+        Генерация пре-подписанного URL для доступа к файлу.
+        
+        Args:
+            file_reference: URL файла или имя объекта
+            expires: Время жизни ссылки в секундах (по умолчанию: 3600 = 1 час)
+        
+        Returns:
+            str: Пре-подписанный URL для скачивания файла
+        """
+        object_name = self.object_name_from_reference(file_reference)
+        
+        # generate_presigned_url — синхронный метод boto3, запускаем в потоке
+        url = await asyncio.to_thread(
+            self.client.generate_presigned_url,
+            'get_object',  # Операция: получение объекта
+            Params={
+                'Bucket': self.bucket,
+                'Key': object_name
+            },
+            ExpiresIn=expires,  # Время жизни ссылки
+            HttpMethod='GET'
+        )
+        return url
 
     async def get_file_info(self, file_reference: str) -> dict:
         object_name = self.object_name_from_reference(file_reference)

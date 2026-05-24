@@ -63,9 +63,16 @@ const Generator: React.FC = () => {
     try {
       const filesArray = Array.from(files);
       const uploaded = await uploadService.uploadMultiplePhotos(filesArray);
+
+      console.log('✅ Uploaded files:', uploaded); // Для отладки
+      console.log('✅ File URLs:', uploaded.map(f => f.url)); // Для отладки
+      
+      const previewUrls = await Promise.all(
+        uploaded.map(file => uploadService.getFilePreviewUrl(file.id))
+      );
+      
       setUploadedFiles(prev => [...prev, ...uploaded]);
-      const previews = uploaded.map(file => file.url);
-      setUploadedPhotos(prev => [...prev, ...previews]);
+      setUploadedPhotos(prev => [...prev, ...previewUrls]);
       setCurrentPhotoIndex(0);
       setUploadProgress(100);
     } catch (err) {
@@ -545,10 +552,11 @@ const Generator: React.FC = () => {
             boxSizing: 'border-box',
             width: '571px',
             height: '665px',
-            background: uploadedPhotos.length > 0 ? `url(${uploadedPhotos[currentPhotoIndex]})` : '#E9E9E9',
+            backgroundImage: uploadedPhotos.length > 0 ? `url(${uploadedPhotos[currentPhotoIndex]})` : 'none',
             backgroundColor: '#E9E9E9',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             border: '5px solid #E9E9E9',
             boxShadow: '0px 1px 4px rgba(12, 12, 13, 0.05)',
             borderRadius: '16px',

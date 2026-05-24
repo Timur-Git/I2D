@@ -91,6 +91,18 @@ class UploadService:
             mime_type=upload.mime_type,
             uploaded_at=upload.uploaded_at,
         )
+    
+    @classmethod
+    async def get_file_presigned_url(
+        cls,
+        session: AsyncSession,
+        user: User,
+        file_id: UUID,
+        expires: int = 3600,  # 1 час
+    ) -> str:
+        upload = await cls._get_user_upload(session, user, file_id)
+        storage = MinioClient()
+        return await storage.get_presigned_url(upload.file_url, expires)
 
     @classmethod
     async def delete_photo(

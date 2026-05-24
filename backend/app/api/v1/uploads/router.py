@@ -40,6 +40,16 @@ async def get_file_info(
     return await UploadService.get_file_info(db, current_user, file_id)
 
 
+@router.get("/{file_id}/url")
+async def get_file_url(
+    file_id: UUID,
+    db: DbSession,
+    current_user: Annotated[User, Depends(get_current_user)],
+):
+    url = await UploadService.get_file_presigned_url(db, current_user, file_id)
+    return {"url": url}
+
+
 @router.delete("/{file_id}")
 async def delete_photo(
     file_id: UUID,

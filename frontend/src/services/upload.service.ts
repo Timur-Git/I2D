@@ -50,6 +50,30 @@ class UploadService {
   }
 
   /**
+   * Получение пре-подписанного URL для файла
+   * GET /api/v1/uploads/{file_id}/url
+   */
+  async getFileUrl(id: string, expires: number = 3600): Promise<string> {
+    const response = await api.get(`/uploads/${id}/url`, {
+      params: { expires }
+    });
+    return response.data.url;
+  }
+
+  /**
+   * Получение URL для превью (с кэшированием)
+   */
+  async getFilePreviewUrl(id: string): Promise<string> {
+    try {
+      return await this.getFileUrl(id);
+    } catch (err) {
+      console.error('Failed to get presigned URL:', err);
+      // Fallback: прямой URL (может не работать, если бакет приватный)
+      return `http://localhost:9000/uploads/${id}`;
+    }
+  }
+
+  /**
    * Получение информации о файле
    * GET /api/v1/uploads/{file_id}
    */
